@@ -40,5 +40,14 @@ class KernelLayer(nn.Module):
         nn.init.normal_(self.v, mean=0.0, std=1e-3)
         nn.init.zeros_(self.b)
 
-
-
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        w_hat = self.kernel(self.u, self.v) # [n_in, n_hid]
+        # Compute regularization terms
+        sparse_reg_term = self.lambda_o * torch.sum(w_hat**2)
+        l2_reg_term = self.lambda_2 * torch.sum(self.W**2)
+        reg_term = sparse_reg_term + l2_reg_term
+        # Compute actual output
+        w_eff = self.W * w_hat # [n_in, n_hid]
+        y = torch.matmul(x, w_eff) + self.b
+        y = self.activation(y)
+        return y, reg_term
