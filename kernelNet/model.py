@@ -28,7 +28,7 @@ class MultiLayerKernelNet(nn.Module):
                                    kernel=kernel_function,
                                    activation=activation
                                    ) for _ in range(kernel_layers)]
-        self.layers.append(KernelLayer(kernel_hidden, 
+        self.layers.append(KernelLayer(n_input, 
                                        n_hid=n_input, 
                                        lambda_o=lambda_o, 
                                        lambda_2=lambda_2,
