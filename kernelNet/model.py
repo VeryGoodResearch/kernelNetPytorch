@@ -42,3 +42,10 @@ class MultiLayerKernelNet(nn.Module):
             y, current_reg = layer.forward(x)
             total_reg = current_reg if total_reg is None else total_reg+current_reg
         return y, total_reg
+
+    def parameters(self, recurse: bool = True):
+        params = list(super().parameters(recurse))
+        for layer in self.layers:
+            for param in layer.parameters():
+                params.append(param)
+        return params.__iter__()
