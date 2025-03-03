@@ -41,8 +41,8 @@ def _training_iter(model: MultiLayerKernelNet,
         clipped = torch.clamp(predictions, 1.0, 5.0)
         v_predictions, _ = model.forward(v_data)
         v_clipped = torch.clamp(v_predictions, 1.0, 5.0)
-        error_validation = (v_mask * (clipped - v_data) ** 2).sum() / v_mask.sum() #compute validation error
-        error_train = (t_mask * (v_clipped - t_data) ** 2).sum() / t_mask.sum() #compute train error
+        error_validation = (v_mask * (v_clipped - v_data) ** 2).sum() / v_mask.sum() #compute validation error
+        error_train = (t_mask * (clipped - t_data) ** 2).sum() / t_mask.sum() #compute train error
 
         print('.-^-._' * 12)
         print('epoch:', epoch, 'validation rmse:', np.sqrt(error_validation), 'train rmse:', np.sqrt(error_train))

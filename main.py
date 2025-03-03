@@ -1,20 +1,21 @@
 # Some testing stuff for model
 import torch
-from kernelNet.helpers import generate_data_with_missing
 from kernelNet.training_runner import train_model
+from dataLoader.dataLoader import load_data
+
 
 def main():
-    n = 2000
-    m = 2000
-    train_data = generate_data_with_missing(n, m, missing_prob=0.8)
-    val_data = generate_data_with_missing(n, m, missing_prob=0.8)
+    train_data, test_data, validation_data = load_data('./data/ml-1m/ratings.dat', delimiter='::', transpose=True, valfrac=0.1)
+    train_data = torch.from_numpy(train_data)
+    test_data = torch.from_numpy(test_data)
+    validation_data = torch.from_numpy(validation_data)
     train_mask = torch.greater(train_data, 1e-12)
-    validation_mask = torch.greater(val_data, 1e-12)
+    validation_mask = torch.greater(validation_data, 1e-12)
     epochs = 500
     model = train_model(
             epochs,
             train_data,
-            val_data,
+            validation_data,
             train_mask,
             validation_mask
             )
