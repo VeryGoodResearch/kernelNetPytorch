@@ -5,5 +5,5 @@ import torch
 # Gaussian kernel is used in the proposed models in the paper. 
 def gaussian_kernel(u: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
     dist = torch.norm(u-v, dim=2, p=2)    
-    out = (1-dist).clamp(min=0)
+    out = (1-dist**2).clamp(min=0)
     return out

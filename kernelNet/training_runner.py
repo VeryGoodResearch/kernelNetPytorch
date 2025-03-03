@@ -12,8 +12,7 @@ def _loss(predictions: torch.Tensor,
           reg_term: torch.Tensor,
           mask: torch.Tensor):
     masked_diff = mask * (truth - predictions)
-    # tensorflow implementation of the opimizer divides by 2 for some reason, we do the same to replicate the results
-    loss = torch.sum(masked_diff**2) / 2 
+    loss = torch.sum(masked_diff**2)
     loss = loss + reg_term
     return loss
 
@@ -38,15 +37,18 @@ def _training_iter(model: MultiLayerKernelNet,
 
     # Validation
     with torch.no_grad():
-        predictions, _ = model.forward(t_data)
+        predictions, t_reg = model.forward(t_data)
         clipped = torch.clamp(predictions, 1.0, 5.0)
-        v_predictions, _ = model.forward(v_data)
+        v_predictions, v_reg = model.forward(v_data)
         v_clipped = torch.clamp(v_predictions, 1.0, 5.0)
         error_validation = (v_mask * (v_clipped - v_data) ** 2).sum() / v_mask.sum() #compute validation error
         error_train = (t_mask * (clipped - t_data) ** 2).sum() / t_mask.sum() #compute train error
+        loss_train = _loss(predictions, t_data, t_reg, t_mask)
+        loss_validation = _loss(v_predictions, v_data, v_reg, v_mask)
 
         print('.-^-._' * 12)
         print('epoch:', epoch, 'validation rmse:', np.sqrt(error_validation), 'train rmse:', np.sqrt(error_train))
+        print('training loss: ', loss_train, ', validation_loss: ', loss_validation)
         print('.-^-._' * 12)
 
 def train_model(
