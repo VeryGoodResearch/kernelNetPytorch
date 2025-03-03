@@ -2,6 +2,7 @@
 import torch
 import time
 from kernelNet.training_runner import train_model
+from kernelNet.kernel import gaussian_kernel
 from dataLoader.dataLoader import load_data
 
 
@@ -21,9 +22,10 @@ def main():
             validation_data,
             train_mask,
             validation_mask,
-            lambda_o=0.021,
-            lambda_2=80,
-            history_size=15
+            kernel=gaussian_kernel,
+            lambda_o=0.013,
+            lambda_2=60,
+            history_size=20
             )
     print(model)
 

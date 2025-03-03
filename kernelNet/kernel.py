@@ -7,3 +7,7 @@ def gaussian_kernel(u: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
     dist = torch.norm(u-v, dim=2, p=2)    
     out = (1-dist**2).clamp(min=0)
     return out
+
+def sigma_kernel(u: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
+    dot_product = torch.einsum('bik,bik->bi', u, v)
+    return torch.tanh(dot_product)
