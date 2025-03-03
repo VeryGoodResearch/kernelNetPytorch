@@ -23,8 +23,5 @@ class MultiLayerKernelNet(nn.Module):
         y = x
         for layer in self.layers:
             y, current_reg = layer.forward(x)
-            if total_reg is None:
-                total_reg = current_reg
-            else:
-                total_reg = total_reg + current_reg
+            total_reg = current_reg if total_reg is None else total_reg+current_reg
         return y, total_reg
