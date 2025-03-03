@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 
-from kernel import gaussian_kernel
+from .kernel import gaussian_kernel
 
 from .kernel_layer import KernelLayer
 

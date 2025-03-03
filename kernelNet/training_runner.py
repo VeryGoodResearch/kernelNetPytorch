@@ -2,7 +2,7 @@
 import torch
 import numpy as np
 
-from kernel import gaussian_kernel
+from .kernel import gaussian_kernel
 
 from .model import MultiLayerKernelNet
 
