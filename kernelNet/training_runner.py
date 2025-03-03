@@ -23,20 +23,17 @@ def _training_iter(model: MultiLayerKernelNet,
                   v_data: torch.Tensor,
                   t_mask: torch.Tensor,
                   v_mask: torch.Tensor,
-                  optimizer: torch.optim.LBFGS,
-                  optimizer_steps: int = 1):
+                  optimizer: torch.optim.LBFGS):
     # Not the greatest idea to run it otherwise
     assert torch.is_grad_enabled()
     def optimizer_run():
         optimizer.zero_grad()
         t_pred, t_reg = model.forward(t_data)
         loss = _loss(t_pred, t_data, t_reg, t_mask)
-        print("Training loss: " + loss)
         loss.backward()
         return loss
 
-    for _ in range(optimizer_steps):
-        optimizer.step(optimizer_run)
+    optimizer.step(optimizer_run)
 
     # Validation
     with torch.no_grad():

@@ -33,7 +33,7 @@ class MultiLayerKernelNet(nn.Module):
                                        lambda_o=lambda_o, 
                                        lambda_2=lambda_2,
                                        kernel=kernel_function,
-                                       activation=nn.Identity))
+                                       activation=nn.Identity()))
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         total_reg = None
