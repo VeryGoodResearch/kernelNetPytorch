@@ -17,12 +17,16 @@ def _loss(predictions: torch.Tensor,
 def _training_iter(model: MultiLayerKernelNet, 
                   t_data: torch.Tensor, 
                   v_data: torch.Tensor,
+                  t_mask: torch.Tensor,
+                  v_mask: torch.Tensor,
                   optimizer: torch.optim.LBFGS,
                   optimizer_steps: int = 1):
     def optimizer_run():
         optimizer.zero_grad()
         t_pred, t_reg = model.forward(t_data)
+        loss = _loss(t_pred, t_data, t_reg, t_mask)
         return 0.0
+
     for _ in range(optimizer_steps):
         optimizer.step(optimizer_run)
         
