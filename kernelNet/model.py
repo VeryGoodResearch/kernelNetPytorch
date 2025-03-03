@@ -21,14 +21,21 @@ class MultiLayerKernelNet(nn.Module):
                  activation = torch.sigmoid
                  ) -> None:
         super(MultiLayerKernelNet, self).__init__()
-        self.layers = [KernelLayer(n_input, 
+        self.layers = [KernelLayer(kernel_hidden, 
                                    n_hid=kernel_hidden, 
                                    lambda_o=lambda_o, 
                                    lambda_2=lambda_2,
                                    kernel=kernel_function,
                                    activation=activation
-                                   ) for _ in range(kernel_layers)]
-        self.layers.append(KernelLayer(n_input, 
+                                   ) for _ in range(kernel_layers-1)]
+        self.layers.insert(0, KernelLayer(n_input, 
+                                          n_hid=kernel_hidden,
+                                          lambda_o=lambda_o,
+                                          lambda_2=lambda_2,
+                                          kernel=kernel_function,
+                                          activation=activation
+                                          ))
+        self.layers.append(KernelLayer(kernel_hidden, 
                                        n_hid=n_input, 
                                        lambda_o=lambda_o, 
                                        lambda_2=lambda_2,
@@ -39,7 +46,7 @@ class MultiLayerKernelNet(nn.Module):
         total_reg = None
         y = x
         for layer in self.layers:
-            y, current_reg = layer.forward(x)
+            y, current_reg = layer.forward(y)
             total_reg = current_reg if total_reg is None else total_reg+current_reg
         return y, total_reg
 
@@ -49,3 +56,4 @@ class MultiLayerKernelNet(nn.Module):
             for param in layer.parameters():
                 params.append(param)
         return params.__iter__()
+

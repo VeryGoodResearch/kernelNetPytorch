@@ -1,6 +1,7 @@
 # This module provides some helper utilities used for training the model
 import torch
 import numpy as np
+import time
 
 from .kernel import gaussian_kernel
 
@@ -77,11 +78,11 @@ def train_model(
             model.parameters(), 
             max_iter=output_every, 
             history_size=history_size,
-            line_search_fn="strong_wolfe"
             )
     
     n_epochs = int(epochs/output_every)
     for epoch in range(n_epochs):
+        start = time.time()
         _training_iter(
                 model,
                 epoch,
@@ -91,4 +92,6 @@ def train_model(
                 validation_mask,
                 optimizer
                 )
+        elapsed = time.time() - start
+        print(f'Run took {elapsed} seconds')
     return model
