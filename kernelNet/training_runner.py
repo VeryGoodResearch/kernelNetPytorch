@@ -1,10 +1,11 @@
 # This module provides some helper utilities used for training the model
+from numpy.strings import upper
 import torch
 import numpy as np
 import time
 
 from .kernel import gaussian_kernel
-
+from .optimizer import LBFGSB
 from .model import MultiLayerKernelNet
 
 def _loss(predictions: torch.Tensor, 
@@ -12,7 +13,7 @@ def _loss(predictions: torch.Tensor,
           reg_term: torch.Tensor,
           mask: torch.Tensor):
     masked_diff = mask * (truth - predictions)
-    loss = torch.sum(masked_diff**2)
+    loss = torch.sum(masked_diff**2) / 2
     loss = loss + reg_term
     return loss
 
@@ -47,8 +48,9 @@ def _training_iter(model: MultiLayerKernelNet,
         loss_validation = _loss(v_predictions, v_data, v_reg, v_mask)
 
         print('.-^-._' * 12)
-        print('epoch:', epoch, 'validation rmse:', np.sqrt(error_validation), 'train rmse:', np.sqrt(error_train))
-        print('training loss: ', loss_train, ', validation_loss: ', loss_validation)
+        print('epoch:', epoch) 
+        print('validation rmse:', np.sqrt(error_validation), 'train rmse:', np.sqrt(error_train))
+        print('validation loss: ', loss_validation, ', train_loss: ', loss_train)
         print('.-^-._' * 12)
 
 def train_model(
@@ -65,7 +67,8 @@ def train_model(
         output_every: int = 5,
         # WARNING WARNING WARNING 
         # IF YOU HAVE BAD PC (LOW MEMORY) THEN TUNE THIS THING DOWN, OTHERWISE IT WILL PROBABLY EXPLODE
-        history_size: int = 10
+        history_size: int = 10,
+        learning_rate: float = 1
         ):
     n_input = training_data.shape[1]
     model = MultiLayerKernelNet(
@@ -76,12 +79,27 @@ def train_model(
             kernel_function=kernel,
             activation=activation,
             )
-    optimizer = torch.optim.LBFGS(
-            model.parameters(), 
-            max_iter=output_every, 
-            history_size=history_size,
+    # n_params = sum([np.prod(p.size()) for p in model.parameters()])
+    # x_l=(torch.ones(n_params)*(-100.0))
+    # x_u=(torch.ones(n_params)*(100.0))
+    # optimizer = LBFGSB(
+    #       model.parameters(),
+    #       max_iter=output_every,
+    #       history_size=history_size,
+    #       upper_bound=x_u,
+    #       lower_bound=x_l
+    #       )
+    # optimizer = torch.optim.LBFGS(
+    #        model.parameters(), 
+    #        max_iter=output_every, 
+    #        history_size=history_size,
+    #        lr=learning_rate,
+    #        line_search_fn='strong_wolfe'
+    #        )
+    optimizer = torch.optim.Rprop(
+            model.parameters(),
+            lr=learning_rate
             )
-    
     n_epochs = int(epochs/output_every)
     for epoch in range(n_epochs):
         start = time.time()
