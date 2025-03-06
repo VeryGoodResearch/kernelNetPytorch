@@ -29,7 +29,8 @@ def main():
             lambda_o=0.013,
             lambda_2=60,
             history_size=10,
-            output_every=50
+            output_every=50,
+            logging_path='./logs/'
             )
     print(model)
 

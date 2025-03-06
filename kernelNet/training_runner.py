@@ -1,4 +1,6 @@
 # This module provides some helper utilities used for training the model
+from datetime import datetime
+from os import path
 from numpy.strings import upper
 import torch
 import numpy as np
@@ -24,7 +26,8 @@ def _training_iter(model: MultiLayerKernelNet,
                   v_data: torch.Tensor,
                   t_mask: torch.Tensor,
                   v_mask: torch.Tensor,
-                  optimizer: torch.optim.LBFGS):
+                  optimizer: torch.optim.Optimizer,
+                  log_file):
     # Not the greatest idea to run it otherwise
     assert torch.is_grad_enabled()
     def optimizer_run():
@@ -45,11 +48,11 @@ def _training_iter(model: MultiLayerKernelNet,
         loss_train = _loss(predictions, t_data, t_reg, t_mask)
         loss_validation = _loss(predictions, v_data, t_reg, v_mask)
 
-        print('.-^-._' * 12)
-        print('epoch:', epoch) 
-        print('validation rmse:', np.sqrt(error_validation), 'train rmse:', np.sqrt(error_train))
-        print('validation loss: ', loss_validation, ', train_loss: ', loss_train)
-        print('.-^-._' * 12)
+        print('.-^-._' * 12, file=log_file)
+        print('epoch:', epoch, file=log_file) 
+        print('validation rmse:', np.sqrt(error_validation), 'train rmse:', np.sqrt(error_train), file=log_file)
+        print('validation loss: ', loss_validation, ', train_loss: ', loss_train, file=log_file)
+        print('.-^-._' * 12, file=log_file)
 
 def train_model(
         epochs: int,
@@ -57,6 +60,7 @@ def train_model(
         validation_data: torch.Tensor,
         training_mask: torch.Tensor,
         validation_mask: torch.Tensor,
+        logging_path: str, 
         lambda_o: float = 0.013,
         lambda_2: float = 60,
         activation = torch.sigmoid_,
@@ -94,17 +98,20 @@ def train_model(
             options={'maxiter': output_every, 'disp': True, 'maxcor': history_size}
             )
     n_epochs = int(epochs/output_every)
-    for epoch in range(n_epochs):
-        start = time.time()
-        _training_iter(
-                model,
-                epoch,
-                training_data,
-                validation_data,
-                training_mask,
-                validation_mask,
-                optimizer
-                )
-        elapsed = time.time() - start
-        print(f'Run took {elapsed} seconds')
+    log_path= path.join(logging_path, f'{datetime.now()}.log')
+    with open(log_path, 'w+') as log_file:
+        for epoch in range(n_epochs):
+            start = time.time()
+            _training_iter(
+                    model,
+                    epoch,
+                    training_data,
+                    validation_data,
+                    training_mask,
+                    validation_mask,
+                    optimizer,
+                    log_file,
+                    )
+            elapsed = time.time() - start
+            print(f'Run took {elapsed} seconds')
     return model
