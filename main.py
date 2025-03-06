@@ -9,12 +9,13 @@ from dataLoader.dataLoader import load_data
 def main():
     seed = int(time.time())
     torch.seed()
-    train_data, test_data, validation_data = load_data('./data/ml-1m/ratings.dat', delimiter='::', transpose=True, valfrac=0.1, trainfrac=0.8, seed=seed)
+    train_data, validation_data = load_data('./data/ml-1m/ratings.dat', delimiter='::', transpose=True, valfrac=0.1, seed=seed)
     train_data = torch.from_numpy(train_data)
-    test_data = torch.from_numpy(test_data)
     validation_data = torch.from_numpy(validation_data)
     train_mask = torch.gt(train_data, 1e-12).float()
-    validation_mask = torch.greater(validation_data, 1e-12).float()
+    validation_mask = torch.gt(validation_data, 1e-12).float()
+    print(f'Training shape: {train_data.shape}, validation shape: {validation_data.shape}')
+    print(f'Number of training samples: {train_mask.sum()}, number of validation samples: {validation_mask.sum()}')
     epochs = 5000
     model = train_model(
             epochs,
@@ -23,11 +24,11 @@ def main():
             train_mask,
             validation_mask,
             kernel=gaussian_kernel,
+            activation=torch.nn.Sigmoid(),
             lambda_o=0.013,
             lambda_2=60,
-            history_size=40,
+            history_size=10,
             output_every=5,
-            learning_rate=0.1
             )
     print(model)
 

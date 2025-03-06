@@ -3,9 +3,9 @@ from numpy.strings import upper
 import torch
 import numpy as np
 import time
+from torchmin import ScipyMinimizer
 
 from .kernel import gaussian_kernel
-from .optimizer import LBFGSB
 from .model import MultiLayerKernelNet
 
 def _loss(predictions: torch.Tensor, 
@@ -14,7 +14,7 @@ def _loss(predictions: torch.Tensor,
           mask: torch.Tensor):
     masked_diff = mask * (truth - predictions)
     loss = torch.sum(masked_diff**2) / 2
-    loss = loss + reg_term
+    loss = loss + reg_term 
     return loss
 
 
@@ -40,12 +40,10 @@ def _training_iter(model: MultiLayerKernelNet,
     with torch.no_grad():
         predictions, t_reg = model.forward(t_data)
         clipped = torch.clamp(predictions, 1.0, 5.0)
-        v_predictions, v_reg = model.forward(v_data)
-        v_clipped = torch.clamp(v_predictions, 1.0, 5.0)
-        error_validation = (v_mask * (v_clipped - v_data) ** 2).sum() / v_mask.sum() #compute validation error
+        error_validation = (v_mask * (clipped - v_data) ** 2).sum() / v_mask.sum() #compute validation error
         error_train = (t_mask * (clipped - t_data) ** 2).sum() / t_mask.sum() #compute train error
         loss_train = _loss(predictions, t_data, t_reg, t_mask)
-        loss_validation = _loss(v_predictions, v_data, v_reg, v_mask)
+        loss_validation = _loss(predictions, v_data, t_reg, v_mask)
 
         print('.-^-._' * 12)
         print('epoch:', epoch) 
@@ -79,26 +77,21 @@ def train_model(
             kernel_function=kernel,
             activation=activation,
             )
-    # n_params = sum([np.prod(p.size()) for p in model.parameters()])
-    # x_l=(torch.ones(n_params)*(-100.0))
-    # x_u=(torch.ones(n_params)*(100.0))
-    # optimizer = LBFGSB(
+    optimizer = torch.optim.LBFGS(
+             model.parameters(), 
+             max_iter=output_every, 
+             history_size=history_size,
+             lr=learning_rate,
+             line_search_fn='strong_wolfe'
+             )
+    # optimizer = torch.optim.Rprop(
     #       model.parameters(),
-    #       max_iter=output_every,
-    #       history_size=history_size,
-    #       upper_bound=x_u,
-    #       lower_bound=x_l
+    #       lr=learning_rate
     #       )
-    # optimizer = torch.optim.LBFGS(
-    #        model.parameters(), 
-    #        max_iter=output_every, 
-    #        history_size=history_size,
-    #        lr=learning_rate,
-    #        line_search_fn='strong_wolfe'
-    #        )
-    optimizer = torch.optim.Rprop(
+    optimizer = ScipyMinimizer(
             model.parameters(),
-            lr=learning_rate
+            method='L-BFGS-B',
+            options={'maxiter': output_every, 'disp': True, 'maxcor': history_size}
             )
     n_epochs = int(epochs/output_every)
     for epoch in range(n_epochs):
