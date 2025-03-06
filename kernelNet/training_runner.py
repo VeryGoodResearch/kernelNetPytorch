@@ -59,7 +59,7 @@ def train_model(
         validation_mask: torch.Tensor,
         lambda_o: float = 0.013,
         lambda_2: float = 60,
-        activation = torch.sigmoid,
+        activation = torch.sigmoid_,
         kernel = gaussian_kernel,
         hidden_dims = 500,
         output_every: int = 5,

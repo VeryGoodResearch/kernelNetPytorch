@@ -17,7 +17,7 @@ def main():
     print(f'Training shape: {train_data.shape}, validation shape: {validation_data.shape}')
     print(f'Number of training samples: {train_mask.sum()}, number of validation samples: {validation_mask.sum()}')
     output_every=50
-    epochs = output_every * 20 
+    epochs = output_every * 30 
     model = train_model(
             epochs,
             train_data,
