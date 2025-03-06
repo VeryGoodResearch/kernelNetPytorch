@@ -16,7 +16,8 @@ def main():
     validation_mask = torch.gt(validation_data, 1e-12).float()
     print(f'Training shape: {train_data.shape}, validation shape: {validation_data.shape}')
     print(f'Number of training samples: {train_mask.sum()}, number of validation samples: {validation_mask.sum()}')
-    epochs = 5000
+    output_every=50
+    epochs = output_every * 20 
     model = train_model(
             epochs,
             train_data,
@@ -28,7 +29,7 @@ def main():
             lambda_o=0.013,
             lambda_2=60,
             history_size=10,
-            output_every=5,
+            output_every=50
             )
     print(model)
 
