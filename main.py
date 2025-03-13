@@ -12,12 +12,10 @@ def main():
     train_data, validation_data = load_movie_lens('../ml-1m/ratings.dat', delimiter='::', transpose=True, valfrac=0.1, seed=seed)
     train_data = torch.from_numpy(train_data)
     validation_data = torch.from_numpy(validation_data)
-    #Nie wiem skąd oni wzieli grater than e^-12 jak oceną moze być 1, 2, 3, 4, 5 zmieniłam na >=1 (daje taki sam wynik) dla uproszczenia kodu
     train_mask = torch.greater_equal(train_data, 1).float()
     validation_mask = torch.greater_equal(validation_data, 1).float()
     print(f'Training shape: {train_data.shape}, validation shape: {validation_data.shape}')
     print(f'Training mask: {train_mask.shape}, validation mask shape: {validation_mask.shape}')
-    print(f'Number of training samples: {train_mask.sum()}, number of validation samples: {validation_mask.sum()}')
 
     output_every=50
     epochs = output_every * 30 
@@ -33,7 +31,8 @@ def main():
             lambda_2=60,
             history_size=10,
             output_every=50,
-            logging_path='./logs/',
+            hidden_dims=50,
+            output_path='./output/',
             min_rating=1.0,
             max_rating=5.0)
     print(model)

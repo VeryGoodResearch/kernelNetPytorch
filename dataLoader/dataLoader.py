@@ -61,12 +61,10 @@ def load_movie_lens(path='./', valfrac=0.1, delimiter='::', seed=1234,
         trainRatings = trainRatings.T
         validRatings = validRatings.T
 
-    print('loaded dense data matrix')
-    train_zero_rows = np.sum(np.all(trainRatings == 0, axis=1))
-    valid_zero_rows = np.sum(np.all(validRatings == 0, axis=1))
+    print("train samples" + str(len(trainRatings)))
+    print("validation samples" + str(len(validRatings)))
 
-    print(f'Number of rows with only zeros in trainRatings: {train_zero_rows}')
-    print(f'Number of rows with only zeros in validRatings: {valid_zero_rows}')
+    print('loaded dense data matrix')
 
     return trainRatings, validRatings
 
@@ -82,7 +80,7 @@ def load_jester_data_xls(file_path, valfrac=0.1, seed=1234, transpose=False):
     df = df.drop(columns=[0])
     print('data read in', time() - tic, 'seconds')
 
-    matrix = df.to_numpy()
+    matrix = df.to_numpy().astype(np.float32)
     num_users, num_jokes = matrix.shape
     print(f"number of users: {num_users}") # rows
     print(f"number of jokes: {num_jokes}") # columns
@@ -101,6 +99,9 @@ def load_jester_data_xls(file_path, valfrac=0.1, seed=1234, transpose=False):
 
     train_ratings = matrix[idx[num_val:], :]
     valid_ratings = matrix[idx[:num_val], :]
+    print("train samples" + str(len(train_ratings)))
+    print("validation samples " + str(len(valid_ratings)))
+
 
     # Ensuring valid and train matrix are the same shape
     max_users = max(train_ratings.shape[0], valid_ratings.shape[0])

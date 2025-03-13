@@ -1,6 +1,6 @@
 # This module provides some helper utilities used for training the model
 from datetime import datetime
-from os import path
+from os import path, makedirs
 from numpy.strings import upper
 import torch
 import numpy as np
@@ -9,6 +9,7 @@ from torchmin import ScipyMinimizer
 
 from .kernel import gaussian_kernel
 from .model import MultiLayerKernelNet
+from .save_model import save_model
 
 def _loss(predictions: torch.Tensor, 
           truth: torch.Tensor, 
@@ -29,7 +30,7 @@ def _training_iter(model: MultiLayerKernelNet,
                   optimizer: torch.optim.Optimizer,
                   log_file,
                   min_rating: float,
-                  max_rating: float,):
+                  max_rating: float):
     # Not the greatest idea to run it otherwise
     assert torch.is_grad_enabled()
     def optimizer_run():
@@ -64,7 +65,7 @@ def train_model(
         validation_mask: torch.Tensor,
         min_rating: float,
         max_rating: float,
-        logging_path: str, 
+        output_path: str, 
         lambda_o: float = 0.013,
         lambda_2: float = 60,
         activation = torch.sigmoid_,
@@ -104,7 +105,8 @@ def train_model(
             options={'maxiter': output_every, 'disp': True, 'maxcor': history_size}
             )
     n_epochs = int(epochs/output_every)
-    log_path= path.join(logging_path, f'{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.log')
+    makedirs(output_path, exist_ok=True)
+    log_path= path.join(output_path, f'{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.log')
     with open(log_path, 'w+') as log_file:
         for epoch in range(n_epochs):
             start = time.time()
@@ -121,5 +123,6 @@ def train_model(
                     max_rating
                     )
             elapsed = time.time() - start
+            save_model(model, output_path)
             print(f'Run took {elapsed} seconds')
     return model
