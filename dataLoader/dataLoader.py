@@ -1,13 +1,11 @@
-'''
-written by Lorenz Muller
-'''
-
 from io import StringIO
 import numpy as np
 from time import time
+import pandas as pd
+import xlrd # usage is hidden but must be installed to read xls
 
 
-def load_data(path='./', valfrac=0.1, delimiter='::', seed=1234,
+def load_movie_lens(path='./', valfrac=0.1, delimiter='::', seed=1234,
              transpose=False):
     '''
     loads ml-1m data
@@ -64,5 +62,55 @@ def load_data(path='./', valfrac=0.1, delimiter='::', seed=1234,
         validRatings = validRatings.T
 
     print('loaded dense data matrix')
+    train_zero_rows = np.sum(np.all(trainRatings == 0, axis=1))
+    valid_zero_rows = np.sum(np.all(validRatings == 0, axis=1))
+
+    print(f'Number of rows with only zeros in trainRatings: {train_zero_rows}')
+    print(f'Number of rows with only zeros in validRatings: {valid_zero_rows}')
 
     return trainRatings, validRatings
+
+def load_jester_data_xls(file_path, valfrac=0.1, seed=1234, transpose=False):
+    np.random.seed(seed)
+
+    tic = time()
+    print('reading data...')
+    df = pd.read_excel(file_path, header=None)
+
+    # First column represents number of ratings per user
+    num_ratings = df.iloc[:, 0].sum()
+    df = df.drop(columns=[0])
+    print('data read in', time() - tic, 'seconds')
+
+    matrix = df.to_numpy()
+    num_users, num_jokes = matrix.shape
+    print(f"number of users: {num_users}") # rows
+    print(f"number of jokes: {num_jokes}") # columns
+    print(f"number of ratings: {num_ratings}") # sum of first column
+
+    # rating normalization
+    # Original range: (-10.00, 10.00) and 99 means no rating
+    # fixed range (1.00, 21.00) and 0 means no rating
+    matrix += 11
+    matrix[matrix == 110] = 0
+
+    idx = np.arange(num_users)
+    np.random.shuffle(idx)
+
+    num_val = int(valfrac * num_users)
+
+    train_ratings = matrix[idx[num_val:], :]
+    valid_ratings = matrix[idx[:num_val], :]
+
+    # Ensuring valid and train matrix are the same shape
+    max_users = max(train_ratings.shape[0], valid_ratings.shape[0])
+    train_ratings = np.pad(train_ratings, ((0, max_users - train_ratings.shape[0]), (0, 0)), mode='constant')
+    valid_ratings = np.pad(valid_ratings, ((0, max_users - valid_ratings.shape[0]), (0, 0)), mode='constant')
+
+    if transpose:
+        train_ratings = train_ratings.T
+        valid_ratings = valid_ratings.T
+
+    print('Loaded dense data matrix')
+
+    return train_ratings, valid_ratings

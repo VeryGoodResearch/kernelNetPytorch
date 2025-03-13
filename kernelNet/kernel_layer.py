@@ -7,7 +7,7 @@ class KernelLayer(nn.Module):
 
     def __init__(self, 
                  n_in: int, # Number of input features
-                 n_hid: int = 500, # Number of hidden units
+                 n_hid: int = 50, # Number of hidden units
                  n_dim: int = 5, # Number of dimensions to be embedded for kernelization
                  activation = torch.sigmoid, # Activation function for layer output
                  kernel = gaussian_kernel, # Kernel function
@@ -41,6 +41,8 @@ class KernelLayer(nn.Module):
         nn.init.zeros_(self.b)
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        x = x.float()
+
         w_hat = self.kernel(self.u, self.v) # [n_in, n_hid]
         # Compute regularization terms
         sparse_reg_term = self.lambda_o * torch.sum(w_hat**2)

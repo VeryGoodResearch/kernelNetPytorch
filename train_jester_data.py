@@ -9,7 +9,8 @@ from dataLoader.dataLoader import load_movie_lens, load_jester_data_xls
 def main():
     seed = int(time.time())
     torch.seed()
-    train_data, validation_data = load_movie_lens('../ml-1m/ratings.dat', delimiter='::', transpose=True, valfrac=0.1, seed=seed)
+    train_data, validation_data = load_jester_data_xls(r'..\jester-data-1\jester-data-1.xls', transpose=True, valfrac=0.1, seed=seed)
+
     train_data = torch.from_numpy(train_data)
     validation_data = torch.from_numpy(validation_data)
     #Nie wiem skąd oni wzieli grater than e^-12 jak oceną moze być 1, 2, 3, 4, 5 zmieniłam na >=1 (daje taki sam wynik) dla uproszczenia kodu
@@ -20,7 +21,7 @@ def main():
     print(f'Number of training samples: {train_mask.sum()}, number of validation samples: {validation_mask.sum()}')
 
     output_every=50
-    epochs = output_every * 30 
+    epochs = output_every * 30
     model = train_model(
             epochs,
             train_data,
@@ -33,9 +34,9 @@ def main():
             lambda_2=60,
             history_size=10,
             output_every=50,
-            logging_path='./logs/',
+            logging_path='./logs_jester/',
             min_rating=1.0,
-            max_rating=5.0)
+            max_rating=21.0)
     print(model)
 
 if __name__ == '__main__':
