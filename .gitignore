@@ -172,5 +172,4 @@ cython_debug/
 .pypirc
 .DS_Store
 data/*
-output/*
-output_jester/*
+output*/*
