@@ -1,6 +1,6 @@
 # This module provides some helper utilities used for training the model
 from datetime import datetime
-from os import path
+from os import path, makedirs
 from numpy.strings import upper
 import torch
 import numpy as np
@@ -9,6 +9,7 @@ from torchmin import ScipyMinimizer
 
 from .kernel import gaussian_kernel
 from .model import MultiLayerKernelNet
+from .save_model import save_model
 
 def _loss(predictions: torch.Tensor, 
           truth: torch.Tensor, 
@@ -27,7 +28,9 @@ def _training_iter(model: MultiLayerKernelNet,
                   t_mask: torch.Tensor,
                   v_mask: torch.Tensor,
                   optimizer: torch.optim.Optimizer,
-                  log_file):
+                  log_file,
+                  min_rating: float,
+                  max_rating: float):
     # Not the greatest idea to run it otherwise
     assert torch.is_grad_enabled()
     def optimizer_run():
@@ -40,13 +43,17 @@ def _training_iter(model: MultiLayerKernelNet,
     optimizer.step(optimizer_run)
 
     # Validation
+    # coś sie tutaj zamotało z walidacją, bo porównywane były predykcje zbioru treningowego z prawdziwymi recenzjami w zbiorze walidacyjnym
+    # predykcje dla treningowego i walidacyjnego powinny być obliczne oddzielnie
     with torch.no_grad():
-        predictions, t_reg = model.forward(t_data)
-        clipped = torch.clamp(predictions, 1.0, 5.0)
-        error_validation = (v_mask * (clipped - v_data) ** 2).sum() / v_mask.sum() #compute validation error
-        error_train = (t_mask * (clipped - t_data) ** 2).sum() / t_mask.sum() #compute train error
-        loss_train = _loss(predictions, t_data, t_reg, t_mask)
-        loss_validation = _loss(predictions, v_data, t_reg, v_mask)
+        predictions_training, t_reg_training = model.forward(t_data)
+        predictions_validation, t_reg_validation = model.forward(t_data)
+        clipped_training = torch.clamp(predictions_training, min_rating, max_rating)
+        clipped_validation = torch.clamp(predictions_validation, min_rating, max_rating)
+        error_validation = (v_mask * (clipped_validation - v_data) ** 2).sum() / v_mask.sum()
+        error_train = (t_mask * (clipped_training - t_data) ** 2).sum() / t_mask.sum()
+        loss_train = _loss(predictions_training, t_data, t_reg_training, t_mask)
+        loss_validation = _loss(predictions_validation, v_data, t_reg_validation, v_mask)
 
         print('.-^-._' * 12, file=log_file)
         print('epoch:', epoch, file=log_file) 
@@ -60,7 +67,9 @@ def train_model(
         validation_data: torch.Tensor,
         training_mask: torch.Tensor,
         validation_mask: torch.Tensor,
-        logging_path: str, 
+        min_rating: float,
+        max_rating: float,
+        output_path: str, 
         lambda_o: float = 0.013,
         lambda_2: float = 60,
         activation = torch.sigmoid_,
@@ -81,6 +90,7 @@ def train_model(
             kernel_function=kernel,
             activation=activation,
             )
+    """
     optimizer = torch.optim.LBFGS(
              model.parameters(), 
              max_iter=output_every, 
@@ -88,17 +98,19 @@ def train_model(
              lr=learning_rate,
              line_search_fn='strong_wolfe'
              )
-    # optimizer = torch.optim.Rprop(
-    #       model.parameters(),
-    #       lr=learning_rate
-    #       )
+    optimizer = torch.optim.Rprop(
+           model.parameters(),
+           lr=learning_rate
+           )
+    """
     optimizer = ScipyMinimizer(
             model.parameters(),
             method='L-BFGS-B',
             options={'maxiter': output_every, 'disp': True, 'maxcor': history_size}
             )
     n_epochs = int(epochs/output_every)
-    log_path= path.join(logging_path, f'{datetime.now()}.log')
+    makedirs(output_path, exist_ok=True)
+    log_path= path.join(output_path, f'{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.log')
     with open(log_path, 'w+') as log_file:
         for epoch in range(n_epochs):
             start = time.time()
@@ -111,7 +123,10 @@ def train_model(
                     validation_mask,
                     optimizer,
                     log_file,
+                    min_rating,
+                    max_rating
                     )
             elapsed = time.time() - start
+            save_model(model, output_path)
             print(f'Run took {elapsed} seconds')
     return model
