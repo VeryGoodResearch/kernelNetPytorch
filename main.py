@@ -10,7 +10,7 @@ def main():
     seed = int(time.time())
     torch.seed()
     # In case transpose=False each sample represents a user
-    train_data, validation_data = load_movie_lens('../ml-1m/ratings.dat', delimiter='::', transpose=True, valfrac=0.1, seed=seed)
+    train_data, validation_data = load_movie_lens('../ml-1m/ratings.dat', delimiter='::', transpose=False, valfrac=0.1, seed=seed)
     train_data = torch.from_numpy(train_data)
     validation_data = torch.from_numpy(validation_data)
     train_mask = torch.greater_equal(train_data, 1).float()

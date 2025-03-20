@@ -43,13 +43,17 @@ def _training_iter(model: MultiLayerKernelNet,
     optimizer.step(optimizer_run)
 
     # Validation
+    # coś sie tutaj zamotało z walidacją, bo porównywane były predykcje zbioru treningowego z prawdziwymi recenzjami w zbiorze walidacyjnym
+    # predykcje dla treningowego i walidacyjnego powinny być obliczne oddzielnie
     with torch.no_grad():
-        predictions, t_reg = model.forward(t_data)
-        clipped = torch.clamp(predictions, min_rating, max_rating)
-        error_validation = (v_mask * (clipped - v_data) ** 2).sum() / v_mask.sum() #compute validation error
-        error_train = (t_mask * (clipped - t_data) ** 2).sum() / t_mask.sum() #compute train error
-        loss_train = _loss(predictions, t_data, t_reg, t_mask)
-        loss_validation = _loss(predictions, v_data, t_reg, v_mask)
+        predictions_training, t_reg_training = model.forward(t_data)
+        predictions_validation, t_reg_validation = model.forward(t_data)
+        clipped_training = torch.clamp(predictions_training, min_rating, max_rating)
+        clipped_validation = torch.clamp(predictions_validation, min_rating, max_rating)
+        error_validation = (v_mask * (clipped_validation - v_data) ** 2).sum() / v_mask.sum()
+        error_train = (t_mask * (clipped_training - t_data) ** 2).sum() / t_mask.sum()
+        loss_train = _loss(predictions_training, t_data, t_reg_training, t_mask)
+        loss_validation = _loss(predictions_validation, v_data, t_reg_validation, v_mask)
 
         print('.-^-._' * 12, file=log_file)
         print('epoch:', epoch, file=log_file) 
