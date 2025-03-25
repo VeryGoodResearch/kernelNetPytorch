@@ -45,14 +45,12 @@ def _training_iter(model: CombinedResidualModel,
 
     # Walidacja
     with torch.no_grad():
-        predictions_training, t_reg_training = model.forward(t_data, t_personality)
-        predictions_validation, t_reg_validation = model.forward(t_data, v_personality)
-        clipped_training = torch.clamp(predictions_training, min_rating, max_rating)
-        clipped_validation = torch.clamp(predictions_validation, min_rating, max_rating)
-        error_validation = (v_mask * (clipped_validation - v_data) ** 2).sum() / v_mask.sum()
-        error_train = (t_mask * (clipped_training - t_data) ** 2).sum() / t_mask.sum()
-        loss_train = _loss(predictions_training, t_data, t_reg_training, t_mask)
-        loss_validation = _loss(predictions_validation, v_data, t_reg_validation, v_mask)
+        predictions, t_reg = model.forward(t_data, t_personality)
+        clipped = torch.clamp(predictions, 1.0, 5.0)
+        error_validation = (v_mask * (clipped - v_data) ** 2).sum() / v_mask.sum()  # compute validation error
+        error_train = (t_mask * (clipped - t_data) ** 2).sum() / t_mask.sum()  # compute train error
+        loss_train = _loss(predictions, t_data, t_reg, t_mask)
+        loss_validation = _loss(predictions, v_data, t_reg, v_mask)
 
         print('.-^-._' * 12, file=log_file)
         print('epoch:', epoch, file=log_file)
@@ -81,7 +79,8 @@ def train_model(
         hidden_dims=500,
         output_every: int = 5,
         history_size: int = 10,
-        learning_rate: float = 1
+        learning_rate: float = 1,
+        user_features_weight: float = 1
 ):
     n_input = training_data.shape[1]
     rating_model = MultiLayerKernelNet(
@@ -92,7 +91,7 @@ def train_model(
         kernel_function=kernel,
         activation=activation,
     )
-    model = CombinedResidualModel(rating_model, personality_feature_dim, residual_hidden_dim=n_users)
+    model = CombinedResidualModel(rating_model, personality_feature_dim, user_features_weight, residual_hidden_dim=n_users)
 
     optimizer = ScipyMinimizer(
         model.parameters(),

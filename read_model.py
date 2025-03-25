@@ -33,5 +33,5 @@ def read_model(rating_range: tuple[int, int], path):
         print("error_validation " + str(error_validation))
 
 
-read_model((0, 21), "output_jester")
+read_model((0, 5), "output")
 #read_model((0, 5), "output")

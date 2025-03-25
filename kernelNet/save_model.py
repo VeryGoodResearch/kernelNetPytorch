@@ -3,6 +3,7 @@ import torch
 from os import makedirs, path
 from .kernel import *
 from .model import MultiLayerKernelNet
+from .CombinedModel import CombinedResidualModel
 
 def save_model(model: MultiLayerKernelNet, output_path):
     makedirs(output_path+r'/model/', exist_ok=True)
@@ -17,5 +18,3 @@ def save_model(model: MultiLayerKernelNet, output_path):
 
     with open(output_path+"/model/model_params.json", "w") as f:
         json.dump(params, f)
-
-

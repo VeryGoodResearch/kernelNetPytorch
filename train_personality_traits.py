@@ -47,7 +47,8 @@ def main():
             hidden_dims=50,
             output_path='./output_personality/',
             min_rating=1.0,
-            max_rating=5.0)
+            max_rating=5.0,
+            user_features_weight = 0.5)
     print(model)
 
 def train_without_personality_traits():
@@ -85,4 +86,4 @@ def train_without_personality_traits():
 
 if __name__ == '__main__':
     main()
-   #train_without_personality_traits()
+    #train_without_personality_traits()

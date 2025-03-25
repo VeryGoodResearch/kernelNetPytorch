@@ -7,7 +7,7 @@ class KernelLayer(nn.Module):
 
     def __init__(self, 
                  n_in: int, # Number of input features
-                 n_hid: int = 50, # Number of hidden units
+                 n_hid: int = 500, # Number of hidden units
                  n_dim: int = 5, # Number of dimensions to be embedded for kernelization
                  activation = torch.sigmoid, # Activation function for layer output
                  kernel = gaussian_kernel, # Kernel function

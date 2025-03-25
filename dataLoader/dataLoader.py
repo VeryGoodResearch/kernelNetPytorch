@@ -198,15 +198,8 @@ def load_ratings_with_personality_traits(path='./', valfrac=0.1, seed=1234, tran
 
         i += 1
 
-    users = [user["user_id"] for user in data]
     ratings = np.array([user["ratings"] for user in data], dtype=np.float32).squeeze()
-
     user_features = np.array([user["features"] for user in data], dtype=np.float32)
-
-    print("to checking consistency:")
-    print("sample user: " + str(users[0]))
-    print("corresponding ratings: " + str(ratings[0]))
-    print("corresponding features: " + str(user_features[0]))
 
     np.random.shuffle(data)
     num_val = int(len(data) * valfrac)
@@ -216,12 +209,6 @@ def load_ratings_with_personality_traits(path='./', valfrac=0.1, seed=1234, tran
 
     train_ratings = ratings[num_val:]
     val_ratings = ratings[:num_val]
-
-
-    print(train_user_features.shape)
-    print(val_user_features.shape)
-    print(train_ratings.shape)
-    print(val_ratings.shape)
 
     # Ensuring valid and train matrix are the same shape
     max_rows = max(train_ratings.shape[0], val_ratings.shape[0])
