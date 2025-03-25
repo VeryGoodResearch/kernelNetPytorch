@@ -21,6 +21,12 @@ class MultiLayerKernelNet(nn.Module):
                  activation = torch.sigmoid
                  ) -> None:
         super(MultiLayerKernelNet, self).__init__()
+        self.n_input = n_input
+        self.kernel_hidden = kernel_hidden
+        self.lambda_o = lambda_o
+        self.lambda_2 = lambda_2
+        self.kernel_function = kernel_function.__name__
+
         self.layers = nn.Sequential(
                 KernelLayer(
                     n_input, 
