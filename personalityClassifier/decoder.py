@@ -1,4 +1,5 @@
 # Definition of the decoder part of the autoencoder
+import torch
 from personalityClassifier.kernel import gaussian_kernel
 from personalityClassifier.kernel_layer import KernelLayer
 from personalityClassifier.utils import get_device

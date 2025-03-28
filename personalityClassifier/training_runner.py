@@ -9,6 +9,7 @@ from torchmin import ScipyMinimizer
 
 from personalityClassifier.autoencoder import KernelNetAutoencoder
 from personalityClassifier.kernel import gaussian_kernel
+from personalityClassifier.utils import get_device
 
 def _loss(predictions: torch.Tensor, 
           truth: torch.Tensor, 
@@ -27,9 +28,7 @@ def _training_iter(model: KernelNetAutoencoder,
                   t_mask: torch.Tensor,
                   v_mask: torch.Tensor,
                   optimizer: torch.optim.Optimizer,
-                  log_file,
-                  min_rating: float,
-                  max_rating: float):
+                  log_file,):
     # Not the greatest idea to run it otherwise
     assert torch.is_grad_enabled()
     def optimizer_run():
@@ -68,8 +67,6 @@ def train_model(
         validation_data: torch.Tensor,
         training_mask: torch.Tensor,
         validation_mask: torch.Tensor,
-        min_rating: float,
-        max_rating: float,
         output_path: str, 
         lambda_o: float = 0.013,
         lambda_2: float = 60,
@@ -82,6 +79,7 @@ def train_model(
         history_size: int = 10,
         learning_rate: float = 1
         ):
+    device = get_device()
     n_input = training_data.shape[1]
     model = KernelNetAutoencoder(
             n_input,
@@ -90,7 +88,7 @@ def train_model(
             kernel_hidden=hidden_dims,
             kernel_function=kernel,
             activation=activation,
-            )
+            ).to(device)
     """
     optimizer = torch.optim.LBFGS(
              model.parameters(), 
@@ -124,8 +122,6 @@ def train_model(
                     validation_mask,
                     optimizer,
                     log_file,
-                    min_rating,
-                    max_rating
                     )
             elapsed = time.time() - start
             # save_model(model, output_path)

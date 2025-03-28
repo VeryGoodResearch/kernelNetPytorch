@@ -1,5 +1,6 @@
 ## First stage of the classifier - an autoencoder model, separated into clear encoder and decoder parts is trained
 from torch import nn
+import torch
 
 from personalityClassifier.decoder import Decoder
 from personalityClassifier.encoder import Encoder
@@ -35,8 +36,8 @@ class KernelNetAutoencoder(nn.Module):
                     activation
                     ).to(self.device),
                 Decoder(
-                    kernel_hidden,
                     n_input,
+                    kernel_hidden,
                     lambda_o,
                     lambda_2,
                     hidden_dims,

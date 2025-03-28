@@ -1,5 +1,6 @@
 # Definition of the encoder part of the autoencoder
 from torch import nn
+import torch
 
 from personalityClassifier.kernel_layer import KernelLayer
 from personalityClassifier.utils import get_device
