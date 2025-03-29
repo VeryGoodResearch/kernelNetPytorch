@@ -13,7 +13,7 @@ def main():
     seed = int(time.time())
     torch.seed()
     train_data, validation_data, train_user_features, valid_user_features = load_ratings_with_personality_traits(
-        path='../personality-isf2018/', valfrac=0.1, seed=seed, transpose=False)
+        path='../personality-isf2018/', valfrac=0.1, seed=seed, feature_classification = True, transpose=False)
 
     train_data = torch.from_numpy(train_data)
     validation_data = torch.from_numpy(validation_data)

@@ -131,7 +131,7 @@ def load_jester_data_xls(file_path, valfrac=0.1, seed=1234, transpose=False):
     return train_ratings, valid_ratings
 
 
-def load_ratings_with_personality_traits(path='./', valfrac=0.1, seed=1234, transpose=False):
+def load_ratings_with_personality_traits(path='./', valfrac=0.1, seed=1234, feature_classification = False, transpose=False):
     """
        The `load_ratings_with_personality_traits` function prepares data for a machine learning model
        by combining users' movie ratings with their personality traits. The dataset can be downloaded from:
@@ -141,7 +141,8 @@ def load_ratings_with_personality_traits(path='./', valfrac=0.1, seed=1234, tran
        - `path` (str): Path to the dataset directory.
        - `valfrac` (float): Fraction of the dataset to be used for validation (default: 0.1).
        - `seed` (int): Random seed for reproducibility (default: 1234).
-       - `transpose` (bool): Not used in this implementation, but can be set for future modifications.
+       - `feature_classification` (bool): returns matrix of original shape and converts them into table of vectors
+       - `transpose` (bool): Transposes all matrixes.
 
        ### Returns:
        - `train_ratings` (numpy.ndarray): Training set containing movie ratings.
@@ -210,24 +211,31 @@ def load_ratings_with_personality_traits(path='./', valfrac=0.1, seed=1234, tran
     train_ratings = ratings[num_val:]
     val_ratings = ratings[:num_val]
 
-    # Ensuring valid and train matrix are the same shape
-    max_rows = max(train_ratings.shape[0], val_ratings.shape[0])
-    if train_ratings.shape[0] < max_rows:
-        padding = np.zeros((max_rows - train_ratings.shape[0], train_ratings.shape[1]), dtype=np.float32)
-        train_ratings = np.vstack([train_ratings, padding])
-    if val_ratings.shape[0] < max_rows:
-        padding = np.zeros((max_rows - val_ratings.shape[0], val_ratings.shape[1]), dtype=np.float32)
-        val_ratings = np.vstack([val_ratings, padding])
+    if not feature_classification:
+        # Ensuring valid and train matrix are the same shape
+        max_rows = max(train_ratings.shape[0], val_ratings.shape[0])
+        if train_ratings.shape[0] < max_rows:
+            padding = np.zeros((max_rows - train_ratings.shape[0], train_ratings.shape[1]), dtype=np.float32)
+            train_ratings = np.vstack([train_ratings, padding])
+        if val_ratings.shape[0] < max_rows:
+            padding = np.zeros((max_rows - val_ratings.shape[0], val_ratings.shape[1]), dtype=np.float32)
+            val_ratings = np.vstack([val_ratings, padding])
 
-    max_rows_features = max(train_user_features.shape[0], val_user_features.shape[0])
-    if train_user_features.shape[0] < max_rows_features:
-        padding = np.zeros((max_rows_features - train_user_features.shape[0], train_user_features.shape[1]),
-                           dtype=np.float32)
-        train_user_features = np.vstack([train_user_features, padding])
-    if val_user_features.shape[0] < max_rows_features:
-        padding = np.zeros((max_rows_features - val_user_features.shape[0], val_user_features.shape[1]),
-                           dtype=np.float32)
-        val_user_features = np.vstack([val_user_features, padding])
+        max_rows_features = max(train_user_features.shape[0], val_user_features.shape[0])
+        if train_user_features.shape[0] < max_rows_features:
+            padding = np.zeros((max_rows_features - train_user_features.shape[0], train_user_features.shape[1]),
+                               dtype=np.float32)
+            train_user_features = np.vstack([train_user_features, padding])
+        if val_user_features.shape[0] < max_rows_features:
+            padding = np.zeros((max_rows_features - val_user_features.shape[0], val_user_features.shape[1]),
+                               dtype=np.float32)
+            val_user_features = np.vstack([val_user_features, padding])
+    else:
+        train_user_features = train_user_features.reshape(train_user_features.shape[0], 1, train_user_features.shape[1])
+        val_user_features = val_user_features.reshape(val_user_features.shape[0], 1, val_user_features.shape[1])
+
+        train_ratings = train_ratings.reshape(train_ratings.shape[0], 1, train_ratings.shape[1])
+        val_ratings = val_ratings.reshape(val_ratings.shape[0], 1, val_ratings.shape[1])
 
     if transpose:
         train_ratings = train_ratings.T
