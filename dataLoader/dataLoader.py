@@ -1,3 +1,7 @@
+'''
+written by Lorenz Muller
+'''
+
 from io import StringIO
 import numpy as np
 from time import time
