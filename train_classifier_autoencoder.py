@@ -5,18 +5,17 @@ import time
 from dataLoader.dataLoader import load_ratings_with_personality_traits
 from personalityClassifier.kernel import gaussian_kernel
 from personalityClassifier.training_runner import train_model
+from personalityClassifier.utils import get_device
 
 
 def main():
     seed = int(time.time())
     torch.seed()
     train_data, validation_data, train_user_features, valid_user_features = load_ratings_with_personality_traits(
-        path='data/personality-isf2018/', valfrac=0.1, seed=seed, transpose=False)
-
-    train_data = torch.from_numpy(train_data)
-    validation_data = torch.from_numpy(validation_data)
-    train_user_features = torch.from_numpy(train_user_features)
-    valid_user_features = torch.from_numpy(valid_user_features)
+        path='data/personality-isf2018/', valfrac=0.1, seed=seed, transpose=False, feature_classification=True)
+    device = get_device()
+    train_data = torch.from_numpy(train_data).to(device).squeeze()
+    validation_data = torch.from_numpy(validation_data).to(device).squeeze()
     train_mask = torch.greater_equal(train_data, 1).float()
     validation_mask = torch.greater_equal(validation_data, 1).float()
     print(f'Training shape: {train_data.shape}, validation shape: {validation_data.shape}')
@@ -32,12 +31,13 @@ def main():
             validation_mask,
             kernel=gaussian_kernel,
             activation=torch.nn.Sigmoid(),
-            lambda_o=0.013,
-            lambda_2=60,
-            history_size=10,
+            lambda_o=0.015,
+            lambda_2=65,
+            history_size=5,
             output_every=50,
             hidden_dims=500,
-            output_path='./output_autoencoder/')
+            output_path='./output_autoencoder/',
+            learning_rate=1.0)
     print(model)
 
 if __name__ == '__main__':

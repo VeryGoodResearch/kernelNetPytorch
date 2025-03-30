@@ -15,7 +15,7 @@ def _loss(predictions: torch.Tensor,
           truth: torch.Tensor, 
           reg_term: torch.Tensor,
           mask: torch.Tensor):
-    masked_diff = mask * (truth - predictions)
+    masked_diff = mask*(truth - predictions)
     loss = torch.sum(masked_diff**2) / 2
     loss = loss + reg_term 
     return loss
@@ -36,6 +36,12 @@ def _training_iter(model: KernelNetAutoencoder,
         t_pred, t_reg = model.forward(t_data)
         loss = _loss(t_pred, t_data, t_reg, t_mask)
         loss.backward()
+        """
+        ## Debug
+        for name, param in model.named_parameters():
+            if param.grad is not None:
+                print(f"{name} gradient mean: {param.grad.mean()}")
+        """        
         return loss
 
     optimizer.step(optimizer_run)
@@ -43,10 +49,14 @@ def _training_iter(model: KernelNetAutoencoder,
     # Validation
     with torch.no_grad():
         predictions, t_reg = model.forward(t_data)
+        print(predictions)
         clipped = torch.clamp(predictions, 1.0, 5.0)
-        error_validation = (v_mask * (clipped - v_data) ** 2).sum() / v_mask.sum()  # compute validation error
         error_train = (t_mask * (clipped - t_data) ** 2).sum() / t_mask.sum()  # compute train error
         loss_train = _loss(predictions, t_data, t_reg, t_mask)
+        # Validation stuff
+        predictions, t_reg = model.forward(v_data)
+        clipped = torch.clamp(predictions, 1.0, 5.0)
+        error_validation = (v_mask * (clipped - v_data) ** 2).sum() / v_mask.sum()  # compute validation error
         loss_validation = _loss(predictions, v_data, t_reg, v_mask)
 
         print('.-^-._' * 12, file=log_file)
@@ -77,7 +87,7 @@ def train_model(
         # WARNING WARNING WARNING 
         # IF YOU HAVE BAD PC (LOW MEMORY) THEN TUNE THIS THING DOWN, OTHERWISE IT WILL PROBABLY EXPLODE
         history_size: int = 10,
-        learning_rate: float = 1
+        learning_rate: float = 1,
         ):
     device = get_device()
     n_input = training_data.shape[1]
@@ -90,6 +100,16 @@ def train_model(
             activation=activation,
             ).to(device)
     """
+    optimizer = torch.optim.Rprop(
+           model.parameters(),
+           lr=learning_rate
+           )
+    optimizer = ScipyMinimizer(
+            model.parameters(),
+            method='L-BFGS-B',
+            options={'maxiter': output_every, 'disp': True, 'maxcor': history_size}
+            )
+    """
     optimizer = torch.optim.LBFGS(
              model.parameters(), 
              max_iter=output_every, 
@@ -97,16 +117,6 @@ def train_model(
              lr=learning_rate,
              line_search_fn='strong_wolfe'
              )
-    optimizer = torch.optim.Rprop(
-           model.parameters(),
-           lr=learning_rate
-           )
-    """
-    optimizer = ScipyMinimizer(
-            model.parameters(),
-            method='L-BFGS-B',
-            options={'maxiter': output_every, 'disp': True, 'maxcor': history_size}
-            )
     n_epochs = int(epochs/output_every)
     makedirs(output_path, exist_ok=True)
     log_path= path.join(output_path, f'{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.log')

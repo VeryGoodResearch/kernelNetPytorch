@@ -19,17 +19,24 @@ class Decoder(nn.Module):
                  ) -> None:
         super().__init__()
         self.device = get_device()
-        self.layer = KernelLayer(n_in=kernel_hidden,
-                            activation=activation,
+        self.layers = nn.Sequential(
+                KernelLayer(n_in=kernel_hidden,
+                            activation=nn.Identity(),
                             n_hid=n_output,
                             n_dim=hidden_dims,
                             lambda_o=lambda_o,
                             lambda_2=lambda_2,
                             kernel=kernel_function
-                            ).to(self.device)
+                            )
+                ).to(self.device)
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        return self.layer.forward(x)
+        total_reg = None
+        y = x
+        for layer in self.layers.children():
+            y, current_reg = layer.forward(y)
+            total_reg = current_reg if total_reg is None else total_reg+current_reg
+        return y, total_reg
 
     def parameters(self, recurse: bool = True):
-        return self.layer.parameters(recurse)
+        return self.layers.parameters(recurse)
