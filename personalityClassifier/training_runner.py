@@ -19,7 +19,7 @@ def _loss(predictions: torch.Tensor,
     masked_diff = mask * (truth - predictions)
     masked_loss = torch.sum(masked_diff**2) / 2
     loss = torch.sum((truth-predictions)**2) / 2
-    loss = loss + sparsity_factor*masked_loss + reg_term 
+    loss = loss/sparsity_factor + masked_loss + reg_term 
     return loss
 
 
