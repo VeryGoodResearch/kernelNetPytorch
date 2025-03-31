@@ -14,10 +14,12 @@ from personalityClassifier.utils import get_device
 def _loss(predictions: torch.Tensor, 
           truth: torch.Tensor, 
           reg_term: torch.Tensor,
-          mask: torch.Tensor):
-    masked_diff = (truth - predictions)
-    loss = torch.sum(masked_diff**2) / 2
-    loss = loss + reg_term 
+          mask: torch.Tensor,
+          sparsity_factor: float):
+    masked_diff = mask * (truth - predictions)
+    masked_loss = torch.sum(masked_diff**2) / 2
+    loss = torch.sum((truth-predictions)**2) / 2
+    loss = loss + sparsity_factor*masked_loss + reg_term 
     return loss
 
 
@@ -28,13 +30,14 @@ def _training_iter(model: KernelNetAutoencoder,
                   t_mask: torch.Tensor,
                   v_mask: torch.Tensor,
                   optimizer: torch.optim.Optimizer,
+                  sparsity_factor: float,  
                   log_file,):
     # Not the greatest idea to run it otherwise
     assert torch.is_grad_enabled()
     def optimizer_run():
         optimizer.zero_grad()
         t_pred, t_reg = model.forward(t_data)
-        loss = _loss(t_pred, t_data, t_reg, t_mask)
+        loss = _loss(t_pred, t_data, t_reg, t_mask, sparsity_factor)
         loss.backward()
         """
         ## Debug
@@ -51,22 +54,26 @@ def _training_iter(model: KernelNetAutoencoder,
         predictions, t_reg = model.forward(t_data)
         print(predictions)
         error_train = ((predictions - t_data) ** 2).sum() / predictions.numel()   # compute train error
-        loss_train = _loss(predictions, t_data, t_reg, t_mask)
+        error_train_observed = (t_mask * (predictions - t_data)**2).sum() / t_mask.sum()
+        loss_train = _loss(predictions, t_data, t_reg, t_mask, sparsity_factor)
         # Validation stuff
         predictions, t_reg = model.forward(v_data)
         error_validation = ((predictions - v_data) ** 2).sum() / predictions.numel()  # compute validation error
-        loss_validation = _loss(predictions, v_data, t_reg, v_mask)
+        error_validation_observed = (v_mask * (predictions - v_data)**2).sum() / v_mask.sum()
+        loss_validation = _loss(predictions, v_data, t_reg, v_mask, sparsity_factor)
 
         print('.-^-._' * 12, file=log_file)
         print('epoch:', epoch, file=log_file) 
         print('validation rmse:', np.sqrt(error_validation), 'train rmse:', np.sqrt(error_train), file=log_file)
         print('validation loss: ', loss_validation, ', train_loss: ', loss_train, file=log_file)
+        print('validation observed rmse: ', np.sqrt(error_validation_observed), ', train observed rmse: ', np.sqrt(error_train_observed), file=log_file)
         print('.-^-._' * 12, file=log_file)
 
         print('.-^-._' * 12) 
         print('epoch:', epoch) 
         print('validation rmse:', np.sqrt(error_validation), 'train rmse:', np.sqrt(error_train))
         print('validation loss: ', loss_validation, ', train_loss: ', loss_train)
+        print('validation observed rmse: ', np.sqrt(error_validation_observed), ', train observed rmse: ', np.sqrt(error_train_observed))
         print('.-^-._' * 12)
 
 def train_model(
@@ -86,6 +93,7 @@ def train_model(
         # IF YOU HAVE BAD PC (LOW MEMORY) THEN TUNE THIS THING DOWN, OTHERWISE IT WILL PROBABLY EXPLODE
         history_size: int = 10,
         learning_rate: float = 1,
+        sparsity_factor: float = 0.035
         ):
     device = get_device()
     n_input = training_data.shape[1]
@@ -129,6 +137,7 @@ def train_model(
                     training_mask,
                     validation_mask,
                     optimizer,
+                    sparsity_factor,
                     log_file,
                     )
             elapsed = time.time() - start
