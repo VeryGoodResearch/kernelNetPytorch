@@ -46,6 +46,32 @@ validation loss:  tensor(41328.5117) , train_loss:  tensor(295799.5625)
 - learned a medium representation 
 - will most likely have to teach it to go over 0s as well - very sparse information
 
+### Actually usable results no. 1 
+
+tensor([[ 1.8103e+00,  5.0167e-01,  9.7774e-02,  ...,  1.6058e-03,
+          2.1138e-03,  2.4829e-03],
+        [ 3.5974e+00,  3.4830e+00,  5.5032e-01,  ..., -1.4763e-03,
+          3.5846e-03, -2.7948e-03],
+        [ 1.8382e+00,  1.1020e+00, -2.0108e-02,  ..., -8.9709e-04,
+          1.1072e-03, -1.5930e-03],
+        ...,
+        [ 2.2198e+00,  2.9359e+00,  5.0100e-01,  ..., -3.2102e-04,
+          7.0724e-04, -8.1535e-04],
+        [ 2.2466e+00,  2.2374e+00, -2.0005e-02,  ...,  9.0622e-04,
+         -1.2084e-04,  1.3102e-03],
+        [ 2.4585e+00,  4.1957e-01, -1.9862e-01,  ...,  3.0739e-03,
+          6.5661e-04,  4.8899e-03]])
+.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._
+epoch: 29
+validation rmse: tensor(0.3394) train rmse: tensor(0.3133)
+validation loss:  tensor(745368.3750) , train_loss:  tensor(3205944.2500)
+.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._
+
+- changed loss function to go over 0s as well as actual grades - actually surprisingly worked
+- did not learn a mean representation of columns
+- could use some hyperpameter optimization
+- will experiment with weighted loss scaled by sparsity for 0s in the thingy
+
 ## żabson - sexoholik lyrics
 Swizzy na bicie ziomal
 Sexoholik!

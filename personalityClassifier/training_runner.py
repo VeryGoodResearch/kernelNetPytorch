@@ -15,7 +15,7 @@ def _loss(predictions: torch.Tensor,
           truth: torch.Tensor, 
           reg_term: torch.Tensor,
           mask: torch.Tensor):
-    masked_diff = mask*(truth - predictions)
+    masked_diff = (truth - predictions)
     loss = torch.sum(masked_diff**2) / 2
     loss = loss + reg_term 
     return loss
@@ -50,13 +50,11 @@ def _training_iter(model: KernelNetAutoencoder,
     with torch.no_grad():
         predictions, t_reg = model.forward(t_data)
         print(predictions)
-        clipped = torch.clamp(predictions, 1.0, 5.0)
-        error_train = (t_mask * (clipped - t_data) ** 2).sum() / t_mask.sum()  # compute train error
+        error_train = ((predictions - t_data) ** 2).sum() / predictions.numel()   # compute train error
         loss_train = _loss(predictions, t_data, t_reg, t_mask)
         # Validation stuff
         predictions, t_reg = model.forward(v_data)
-        clipped = torch.clamp(predictions, 1.0, 5.0)
-        error_validation = (v_mask * (clipped - v_data) ** 2).sum() / v_mask.sum()  # compute validation error
+        error_validation = ((predictions - v_data) ** 2).sum() / predictions.numel()  # compute validation error
         loss_validation = _loss(predictions, v_data, t_reg, v_mask)
 
         print('.-^-._' * 12, file=log_file)
