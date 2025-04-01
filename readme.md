@@ -72,6 +72,40 @@ validation loss:  tensor(745368.3750) , train_loss:  tensor(3205944.2500)
 - could use some hyperpameter optimization
 - will experiment with weighted loss scaled by sparsity for 0s in the thingy
 
+### Another semi usable stuff
+- added weighted observed SE to loss function
+- added sparsity factor as a weight to loss function - sqrt(sparsity)
+- gets even better results, however
+
+## BIG problem - obsereved RMSE IS ACTUALLY ATROCIOUS
+- even for weighted loss, we get sht like 2.5 - which is not good to say the least
+- changing model architecture might help
+
+### First 'improved' model
+- kinda went in blind assuming that the latent space is to small to actually map the features
+- increased both the embedding dimensionality for 1st encoder layer (5 -> 20) and decoder layer (5 -> 10). Also increased the 1st encoder layer normal dimensionality from 500 to 1000
+- overfitting @ epoch 7, need to increase reg term probably
+- can we actually do some kind of ensemble model? probably, but still need to map it to a single layer with singular loss function which does suck
+
+### Another one - dj khaled
+- better, still kinda garbage
+- got better response to observed ratings with sparsity to 4th
+- still overfitting as hell, even with reg term increase
+- theory - increasing reg term helps to a point in training, at some point it starts overfitting - maybe dropout of like 0.7 in latent space can help? or doing sth to decoder, or encoder, or preferably both - it seems to be handling the representation nicely now, it is just the issue of overfitting, so *improve generalization*
+
+Training data:
+tensor([3.0000, 4.5000, 0.0000,  ..., 0.0000, 0.0000, 0.0000])
+Model predicted
+tensor([ 3.0132e+00,  2.1441e+00,  1.8676e-01,  ...,  2.6686e-03,
+        -1.9757e-02,  3.5244e-03])
+.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._
+epoch: 29
+validation rmse: tensor(0.3359) train rmse: tensor(0.2305)
+validation loss:  tensor(18202472.) , train_loss:  tensor(52332512.)
+validation observed rmse:  tensor(1.9790) , train observed rmse:  tensor(1.3764)
+.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._.-^-._
+Run took 237.83021521568298 seconds
+
 ## żabson - sexoholik lyrics
 Swizzy na bicie ziomal
 Sexoholik!

@@ -22,16 +22,16 @@ class Encoder(nn.Module):
         self.layers = nn.Sequential(
                 KernelLayer(n_in=n_input,
                             activation=activation,
-                            n_hid=kernel_hidden,
-                            n_dim=hidden_dims,
+                            n_hid=kernel_hidden*2,
+                            n_dim=20,
                             lambda_o=lambda_o,
                             lambda_2=lambda_2,
                             kernel=kernel_function
                             ),
-                KernelLayer(n_in=kernel_hidden,
+                KernelLayer(n_in=kernel_hidden*2,
                             activation=activation,
                             n_hid=kernel_hidden,
-                            n_dim=hidden_dims,
+                            n_dim=5,
                             lambda_o=lambda_o,
                             lambda_2=lambda_2,
                             kernel=kernel_function

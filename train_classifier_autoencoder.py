@@ -19,7 +19,7 @@ def main():
     validation_data = torch.from_numpy(validation_data).to(device).squeeze()
     train_mask = torch.greater_equal(train_data, 1).float()
     validation_mask = torch.greater_equal(validation_data, 1).float()
-    sparsity_factor = (train_mask.numel()/train_mask.sum())**2
+    sparsity_factor = (train_mask.numel()/train_mask.sum())**4
     print(f'Training shape: {train_data.shape}, validation shape: {validation_data.shape}')
     print(f'Training mask: {train_mask.shape}, validation mask shape: {validation_mask.shape}')
     print(f'Sparsity factor: {sparsity_factor}')
@@ -33,8 +33,8 @@ def main():
             validation_mask,
             kernel=gaussian_kernel,
             activation=torch.nn.Sigmoid(),
-            lambda_o=0.017,
-            lambda_2=80,
+            lambda_o=0.023,
+            lambda_2=100,
             history_size=5,
             output_every=50,
             hidden_dims=500,

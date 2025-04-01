@@ -52,15 +52,20 @@ def _training_iter(model: KernelNetAutoencoder,
     # Validation
     with torch.no_grad():
         predictions, t_reg = model.forward(t_data)
-        print(predictions)
+        print('Training data:')
+        print(t_data[0])
+        print('Model predicted')
+        print(predictions[0])
         error_train = ((predictions - t_data) ** 2).sum() / predictions.numel()   # compute train error
-        error_train_observed = (t_mask * (predictions - t_data)**2).sum() / t_mask.sum()
         loss_train = _loss(predictions, t_data, t_reg, t_mask, sparsity_factor)
+        predictions = predictions.clip(1.0, 5.0) # We want to emulate the original masked mse as closely as possible
+        error_train_observed = (t_mask * (predictions - t_data)**2).sum() / t_mask.sum()
         # Validation stuff
         predictions, t_reg = model.forward(v_data)
         error_validation = ((predictions - v_data) ** 2).sum() / predictions.numel()  # compute validation error
-        error_validation_observed = (v_mask * (predictions - v_data)**2).sum() / v_mask.sum()
         loss_validation = _loss(predictions, v_data, t_reg, v_mask, sparsity_factor)
+        predictions = predictions.clip(1.0, 5.0) # We want to emulate the original masked mse as closely as possible
+        error_validation_observed = (v_mask * (predictions - v_data)**2).sum() / v_mask.sum()
 
         print('.-^-._' * 12, file=log_file)
         print('epoch:', epoch, file=log_file) 
