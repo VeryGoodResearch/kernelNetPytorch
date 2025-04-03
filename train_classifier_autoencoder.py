@@ -33,7 +33,7 @@ def main():
             train_mask,
             validation_mask,
             kernel=gaussian_kernel,
-            activation=torch.nn.Sigmoid(),
+            activation=torch.nn.ReLU(),
             lambda_o=0.023,
             lambda_2=100,
             history_size=5,
