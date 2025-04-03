@@ -23,6 +23,7 @@ def main():
     print(f'Training shape: {train_data.shape}, validation shape: {validation_data.shape}')
     print(f'Training mask: {train_mask.shape}, validation mask shape: {validation_mask.shape}')
     print(f'Sparsity factor: {sparsity_factor}')
+    print(f'Device: {device}')
     output_every=50
     epochs = output_every * 30
     model = train_model(
