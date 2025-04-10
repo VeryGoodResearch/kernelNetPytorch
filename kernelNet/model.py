@@ -37,16 +37,16 @@ class MultiLayerKernelNet(nn.Module):
                     activation=activation
                 ),
                 KernelLayer(
-                    kernel_hidden, 
-                    n_hid=kernel_hidden, 
-                    lambda_o=lambda_o, 
+                    kernel_hidden,
+                    n_hid=kernel_hidden,
+                    lambda_o=lambda_o,
                     lambda_2=lambda_2,
                     kernel=kernel_function,
                     activation=activation
                 ),
-                KernelLayer(kernel_hidden, 
-                    n_hid=n_input, 
-                    lambda_o=lambda_o, 
+                KernelLayer(kernel_hidden,
+                    n_hid=n_input,
+                    lambda_o=lambda_o,
                     lambda_2=lambda_2,
                     kernel=kernel_function,
                     activation=nn.Identity())
@@ -62,4 +62,3 @@ class MultiLayerKernelNet(nn.Module):
 
     def parameters(self, recurse: bool = True):
         return self.layers.parameters(recurse)
-

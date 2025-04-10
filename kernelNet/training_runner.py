@@ -45,7 +45,7 @@ def _training_iter(model: MultiLayerKernelNet,
     # Validation
     with torch.no_grad():
         predictions, t_reg = model.forward(t_data)
-        clipped = torch.clamp(predictions, 1.0, 5.0)
+        clipped = torch.clamp(predictions, min_rating, max_rating)
         error_validation = (v_mask * (clipped - v_data) ** 2).sum() / v_mask.sum()  # compute validation error
         error_train = (t_mask * (clipped - t_data) ** 2).sum() / t_mask.sum()  # compute train error
         loss_train = _loss(predictions, t_data, t_reg, t_mask)
@@ -56,6 +56,11 @@ def _training_iter(model: MultiLayerKernelNet,
         print('validation rmse:', np.sqrt(error_validation), 'train rmse:', np.sqrt(error_train), file=log_file)
         print('validation loss: ', loss_validation, ', train_loss: ', loss_train, file=log_file)
         print('.-^-._' * 12, file=log_file)
+
+        print('epoch:', epoch)
+        print('validation rmse:', np.sqrt(error_validation), 'train rmse:', np.sqrt(error_train))
+        print('validation loss: ', loss_validation, ', train_loss: ', loss_train)
+
 
 def train_model(
         epochs: int,
@@ -94,6 +99,8 @@ def train_model(
              lr=learning_rate,
              line_search_fn='strong_wolfe'
              )
+    
+
     optimizer = torch.optim.Rprop(
            model.parameters(),
            lr=learning_rate
@@ -104,6 +111,8 @@ def train_model(
             method='L-BFGS-B',
             options={'maxiter': output_every, 'disp': True, 'maxcor': history_size}
             )
+
+
     n_epochs = int(epochs/output_every)
     makedirs(output_path, exist_ok=True)
     log_path= path.join(output_path, f'{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.log')

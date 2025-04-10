@@ -28,7 +28,7 @@ def main():
             kernel=gaussian_kernel,
             activation=torch.nn.Sigmoid(),
             lambda_o=0.03,
-            lambda_2=30,
+            lambda_2=60,
             history_size=10,
             hidden_dims = 50,
             output_every=50,

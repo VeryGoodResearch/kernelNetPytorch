@@ -46,7 +46,7 @@ def _training_iter(model: CombinedResidualModel,
     # Walidacja
     with torch.no_grad():
         predictions, t_reg = model.forward(t_data, t_personality)
-        clipped = torch.clamp(predictions, 1.0, 5.0)
+        clipped = torch.clamp(predictions, min_rating, max_rating)
         error_validation = (v_mask * (clipped - v_data) ** 2).sum() / v_mask.sum()  # compute validation error
         error_train = (t_mask * (clipped - t_data) ** 2).sum() / t_mask.sum()  # compute train error
         loss_train = _loss(predictions, t_data, t_reg, t_mask)
@@ -57,6 +57,10 @@ def _training_iter(model: CombinedResidualModel,
         print('validation rmse:', np.sqrt(error_validation), 'train rmse:', np.sqrt(error_train), file=log_file)
         print('validation loss: ', loss_validation, ', train_loss: ', loss_train, file=log_file)
         print('.-^-._' * 12, file=log_file)
+
+        print('epoch:', epoch)
+        print('validation rmse:', np.sqrt(error_validation), 'train rmse:', np.sqrt(error_train))
+        print('validation loss: ', loss_validation, ', train_loss: ', loss_train)
 
 
 def train_model(
@@ -91,7 +95,7 @@ def train_model(
         kernel_function=kernel,
         activation=activation,
     )
-    model = CombinedResidualModel(rating_model, personality_feature_dim, user_features_weight, residual_hidden_dim=n_users)
+    model = CombinedResidualModel(rating_model, personality_feature_dim, user_features_weight)
 
     optimizer = ScipyMinimizer(
         model.parameters(),

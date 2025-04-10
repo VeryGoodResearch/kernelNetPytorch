@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 class CombinedResidualModel(nn.Module):
-    def __init__(self, rating_model: nn.Module, personality_feature_dim: int, user_features_weight: float, residual_hidden_dim: int):
+    def __init__(self, rating_model: nn.Module, personality_feature_dim: int, user_features_weight: float, residual_hidden_dim: int = 32):
         super(CombinedResidualModel, self).__init__()
         self.personality_feature_dim = personality_feature_dim
         self.residual_hidden_dim = residual_hidden_dim

@@ -13,7 +13,7 @@ def main():
     seed = int(time.time())
     torch.seed()
     train_data, validation_data, train_user_features, valid_user_features = load_ratings_with_personality_traits(
-        path='../personality-isf2018/', valfrac=0.1, seed=seed, feature_classification = True, transpose=False)
+        path='../personality-isf2018/', valfrac=0.1, seed=seed, feature_classification = False, transpose=False)
 
     train_data = torch.from_numpy(train_data)
     validation_data = torch.from_numpy(validation_data)
@@ -46,7 +46,7 @@ def main():
             output_every=50,
             hidden_dims=50,
             output_path='./output_personality/',
-            min_rating=1.0,
+            min_rating=0.5,
             max_rating=5.0,
             user_features_weight = 0.5)
     print(model)
@@ -80,7 +80,7 @@ def train_without_personality_traits():
         output_every=50,
         hidden_dims=50,
         output_path='./output_personality/',
-        min_rating=1.0,
+        min_rating=0.5,
         max_rating=5.0)
     print(model)
 
