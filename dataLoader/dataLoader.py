@@ -238,15 +238,14 @@ def load_ratings_with_personality_traits(path='./', valfrac=0.1, seed=1234, feat
             padding = np.zeros((max_rows_features - val_user_features.shape[0], val_user_features.shape[1]),
                                dtype=np.float32)
             val_user_features = np.vstack([val_user_features, padding])
+        density = np.count_nonzero(train_ratings) / (train_ratings.shape[0] * train_ratings.shape[1])
+        print("density: " + str(density))
     else:
         train_user_features = train_user_features.reshape(train_user_features.shape[0], 1, train_user_features.shape[1])
         val_user_features = val_user_features.reshape(val_user_features.shape[0], 1, val_user_features.shape[1])
 
         train_ratings = train_ratings.reshape(train_ratings.shape[0], 1, train_ratings.shape[1])
         val_ratings = val_ratings.reshape(val_ratings.shape[0], 1, val_ratings.shape[1])
-
-        density = np.count_nonzero(train_ratings) / (train_ratings.shape[0] * train_ratings.shape[1])
-        print("density: " + str(density))
 
     if transpose:
         train_ratings = train_ratings.T

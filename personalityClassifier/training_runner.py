@@ -5,6 +5,7 @@ from numpy.strings import upper
 import torch
 import numpy as np
 import time
+from .save_encoder import save_encoder
 from torchmin import ScipyMinimizer
 
 from personalityClassifier.autoencoder import KernelNetAutoencoder
@@ -151,6 +152,6 @@ def train_model(
                     max_rating
                     )
             elapsed = time.time() - start
-            # save_model(model, output_path)
+            save_encoder(model.layers[0], output_path)
             print(f'Run took {elapsed} seconds')
     return model
