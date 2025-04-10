@@ -254,8 +254,6 @@ def load_ratings_with_personality_traits(path='./', valfrac=0.1, seed=1234, feat
         train_user_features = train_user_features.T
         val_user_features = val_user_features.T
 
-    density = np.count_nonzero(val_ratings) / (val_ratings.shape[0] * val_ratings.shape[1])
-    print("density: " + str(density))
 
     return train_ratings, val_ratings, train_user_features, val_user_features
 

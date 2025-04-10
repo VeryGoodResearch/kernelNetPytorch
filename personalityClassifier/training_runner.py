@@ -31,7 +31,9 @@ def _training_iter(model: KernelNetAutoencoder,
                   v_mask: torch.Tensor,
                   optimizer: torch.optim.Optimizer,
                   sparsity_factor: float,  
-                  log_file,):
+                  log_file,
+                   min_rating: float,
+                   max_rating: float):
     # Not the greatest idea to run it otherwise
     assert torch.is_grad_enabled()
     def optimizer_run():
@@ -58,13 +60,13 @@ def _training_iter(model: KernelNetAutoencoder,
         print(predictions[0])
         error_train = ((predictions - t_data) ** 2).sum() / predictions.numel()   # compute train error
         loss_train = _loss(predictions, t_data, t_reg, t_mask, sparsity_factor)
-        predictions = predictions.clip(1.0, 5.0) # We want to emulate the original masked mse as closely as possible
+        predictions = predictions.clip(min_rating, max_rating) # We want to emulate the original masked mse as closely as possible
         error_train_observed = (t_mask * (predictions - t_data)**2).sum() / t_mask.sum()
         # Validation stuff
         predictions, t_reg = model.forward(v_data)
         error_validation = ((predictions - v_data) ** 2).sum() / predictions.numel()  # compute validation error
         loss_validation = _loss(predictions, v_data, t_reg, v_mask, sparsity_factor)
-        predictions = predictions.clip(1.0, 5.0) # We want to emulate the original masked mse as closely as possible
+        predictions = predictions.clip(min_rating, max_rating) # We want to emulate the original masked mse as closely as possible
         error_validation_observed = (v_mask * (predictions - v_data)**2).sum() / v_mask.sum()
 
         print('.-^-._' * 12, file=log_file)
@@ -87,7 +89,9 @@ def train_model(
         validation_data: torch.Tensor,
         training_mask: torch.Tensor,
         validation_mask: torch.Tensor,
-        output_path: str, 
+        output_path: str,
+        min_rating: float,
+        max_rating: float,
         lambda_o: float = 0.013,
         lambda_2: float = 60,
         activation = torch.sigmoid_,
@@ -98,8 +102,7 @@ def train_model(
         # IF YOU HAVE BAD PC (LOW MEMORY) THEN TUNE THIS THING DOWN, OTHERWISE IT WILL PROBABLY EXPLODE
         history_size: int = 10,
         learning_rate: float = 1,
-        sparsity_factor: float = 0.035
-        ):
+        sparsity_factor: float = 0.035):
     device = get_device()
     n_input = training_data.shape[1]
     model = KernelNetAutoencoder(
@@ -144,6 +147,8 @@ def train_model(
                     optimizer,
                     sparsity_factor,
                     log_file,
+                    min_rating,
+                    max_rating
                     )
             elapsed = time.time() - start
             # save_model(model, output_path)

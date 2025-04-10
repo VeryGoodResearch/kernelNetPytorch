@@ -40,7 +40,10 @@ def main():
             output_every=50,
             hidden_dims=500,
             output_path='./output_autoencoder/',
-            learning_rate=1.0)
+            learning_rate=1.0,
+            min_rating=0.5,
+            max_rating=5.0)
+
     print(model)
 
 if __name__ == '__main__':
