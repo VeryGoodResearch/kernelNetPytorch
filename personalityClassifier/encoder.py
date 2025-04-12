@@ -1,5 +1,7 @@
 # Definition of the encoder part of the autoencoder
+from typing import override
 from torch import nn
+import torch.nn.functional as F
 import torch
 
 from personalityClassifier.kernel_layer import KernelLayer
@@ -25,32 +27,32 @@ class Encoder(nn.Module):
         self.kernel_function = kernel_function.__name__
         self.activation = activation
         self.device = get_device()
-        self.layers = nn.Sequential(
-                KernelLayer(n_in=n_input,
-                            activation=activation,
-                            n_hid=kernel_hidden*2,
+
+        self.kernel1 = KernelLayer(n_in=n_input,
+                            activation=nn.Identity(),
+                            n_hid=kernel_hidden*3,
                             n_dim=20,
                             lambda_o=lambda_o,
                             lambda_2=lambda_2,
                             kernel=kernel_function
-                            ),
-                KernelLayer(n_in=kernel_hidden*2,
-                            activation=activation,
+                            ).to(self.device)
+        self.bn = nn.LayerNorm(kernel_hidden*3)
+        self.kernel2 = KernelLayer(n_in=kernel_hidden*3,
+                            activation=nn.Identity(),
                             n_hid=kernel_hidden,
-                            n_dim=5,
+                            n_dim=10,
                             lambda_o=lambda_o,
                             lambda_2=lambda_2,
                             kernel=kernel_function
-                            )
-                ).to(self.device)
+                            ).to(self.device)
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        total_reg = None
-        y = x
-        for layer in self.layers.children():
-            y, current_reg = layer.forward(y)
-            total_reg = current_reg if total_reg is None else total_reg+current_reg
-        return y, total_reg
+        x, first_reg = self.kernel1.forward(x)
+        x = self.activation(self.bn(x))
+        x, second_reg = self.kernel2.forward(x)
+        return x, first_reg+second_reg
 
+    @override
     def parameters(self, recurse: bool = True):
-        return self.layers.parameters(recurse)
+        return list(self.kernel1.parameters(recurse)) + list(self.bn.parameters(recurse)) + list(self.kernel2.parameters(recurse))
+

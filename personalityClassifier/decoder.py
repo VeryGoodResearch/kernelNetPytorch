@@ -27,8 +27,8 @@ class Decoder(nn.Module):
                             lambda_o=lambda_o,
                             lambda_2=lambda_2,
                             kernel=kernel_function
-                            )
-                ).to(self.device)
+                            ).to(self.device)
+                )
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         total_reg = None
