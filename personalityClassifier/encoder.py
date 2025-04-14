@@ -28,13 +28,13 @@ class Encoder(nn.Module):
         self.layers = nn.Sequential(
                 KernelLayer(n_in=n_input,
                             activation=activation,
-                            n_hid=kernel_hidden*2,
-                            n_dim=20,
+                            n_hid=kernel_hidden,
+                            n_dim=5,
                             lambda_o=lambda_o,
                             lambda_2=lambda_2,
                             kernel=kernel_function
                             ),
-                KernelLayer(n_in=kernel_hidden*2,
+                KernelLayer(n_in=kernel_hidden,
                             activation=activation,
                             n_hid=kernel_hidden,
                             n_dim=5,

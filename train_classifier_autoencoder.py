@@ -38,7 +38,7 @@ def main():
             lambda_2=100,
             history_size=5,
             output_every=50,
-            hidden_dims=500,
+            hidden_dims=100,
             output_path='./output_autoencoder/',
             learning_rate=1.0,
             min_rating=0.5,

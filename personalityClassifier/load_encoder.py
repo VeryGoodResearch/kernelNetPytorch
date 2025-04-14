@@ -38,22 +38,23 @@ def load_encoder(model_path):
 
     return model
 
-model = load_encoder("../output_autoencoder/")
+def test_loading():
+    model = load_encoder("../output_autoencoder/")
 
-print(model.n_input)
-print(model.kernel_hidden)
-print(model.lambda_o)
+    print(model.n_input)
+    print(model.kernel_hidden)
+    print(model.lambda_o)
 
-seed = int(time.time())
-torch.seed()
-train_data, validation_data, train_user_features, valid_user_features = load_ratings_with_personality_traits(
-    path='../data/personality-isf2018/', valfrac=0.1, seed=seed, transpose=False, feature_classification=True)
-device = get_device()
-train_data = torch.from_numpy(train_data).to(device).squeeze()
-validation_data = torch.from_numpy(validation_data).to(device).squeeze()
+    seed = int(time.time())
+    torch.seed()
+    train_data, validation_data, train_user_features, valid_user_features = load_ratings_with_personality_traits(
+        path='../data/personality-isf2018/', valfrac=0.1, seed=seed, transpose=False, feature_classification=True)
+    device = get_device()
+    train_data = torch.from_numpy(train_data).to(device).squeeze()
+    validation_data = torch.from_numpy(validation_data).to(device).squeeze()
 
-print("original: ", train_data[0])
-print("shape of original: ", train_data[0].shape)
-y, total_reg = model.forward(train_data[0])
-print("compressed: ", y)
-print(y.shape)
+    print("original: ", train_data[0])
+    print("shape of original: ", train_data[0].shape)
+    y, total_reg = model.forward(train_data[0])
+    print("compressed: ", y)
+    print(y.shape)
