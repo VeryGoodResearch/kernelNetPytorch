@@ -60,5 +60,16 @@ class MultiLayerKernelNet(nn.Module):
             total_reg = current_reg if total_reg is None else total_reg+current_reg
         return y, total_reg
 
+    def __latent_forward(self, x: torch.Tensor):
+        assert not torch.is_grad_enabled()
+        children = list(self.layers.children())
+        x, _ = children[0].forward(x)
+        x, _ = children[1].forward(x)
+        return x
+
+    def mmd_forward(self, x: torch.Tensor):
+        assert not torch.is_grad_enabled()
+        return self.__latent_forward(x)
+
     def parameters(self, recurse: bool = True):
         return self.layers.parameters(recurse)
