@@ -23,7 +23,7 @@ def _loss(predictions: torch.Tensor,
 def _evaluate_mmd(model: MultiLayerKernelNet, X, yhat):
     original_latent = model.mmd_forward(X)
     reconstructed_latent = model.mmd_forward(yhat)
-    metric = MaximumMeanDiscrepancy()
+    metric = MaximumMeanDiscrepancy(var=0.1)
     metric.reset()
     metric.update((original_latent, reconstructed_latent))
     mmd = metric.compute()

@@ -32,7 +32,7 @@ def main():
             lambda_2=60,
             history_size=10,
             output_every=50,
-            hidden_dims=500,
+            hidden_dims=50,
             output_path='./output_100k/',
             min_rating=1.0,
             max_rating=5.0)
