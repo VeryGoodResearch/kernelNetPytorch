@@ -23,7 +23,7 @@ class Decoder(nn.Module):
                 KernelLayer(n_in=kernel_hidden,
                             activation=nn.Identity(),
                             n_hid=n_output,
-                            n_dim=50,
+                            n_dim=5,
                             lambda_o=lambda_o,
                             lambda_2=lambda_2,
                             kernel=kernel_function

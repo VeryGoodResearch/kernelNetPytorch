@@ -30,17 +30,8 @@ class Encoder(nn.Module):
 
         self.kernel1 = KernelLayer(n_in=n_input,
                             activation=nn.Identity(),
-                            n_hid=kernel_hidden*3,
-                            n_dim=20,
-                            lambda_o=lambda_o,
-                            lambda_2=lambda_2,
-                            kernel=kernel_function
-                            ).to(self.device)
-        self.bn = nn.LayerNorm(kernel_hidden*3)
-        self.kernel2 = KernelLayer(n_in=kernel_hidden*3,
-                            activation=nn.Identity(),
                             n_hid=kernel_hidden,
-                            n_dim=10,
+                            n_dim=5,
                             lambda_o=lambda_o,
                             lambda_2=lambda_2,
                             kernel=kernel_function
@@ -48,11 +39,10 @@ class Encoder(nn.Module):
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         x, first_reg = self.kernel1.forward(x)
-        x = self.activation(self.bn(x))
-        x, second_reg = self.kernel2.forward(x)
-        return x, first_reg+second_reg
+        x = self.activation(x)
+        return x, first_reg
 
     @override
     def parameters(self, recurse: bool = True):
-        return list(self.kernel1.parameters(recurse)) + list(self.bn.parameters(recurse)) + list(self.kernel2.parameters(recurse))
+        return list(self.kernel1.parameters(recurse))
 
