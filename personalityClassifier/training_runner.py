@@ -19,8 +19,8 @@ def _loss(predictions: torch.Tensor,
           sparsity_factor: float):
     masked_diff = mask * (truth - predictions)
     masked_loss = torch.sum(masked_diff**2) / 2
-    loss = torch.sum((truth-predictions)**2) / 2
-    loss = loss/sparsity_factor + masked_loss + reg_term 
+    loss = torch.sum(((truth-predictions)/sparsity_factor)**2) / 2
+    loss = masked_loss + reg_term 
     return loss
 
 
@@ -59,6 +59,8 @@ def _training_iter(model: KernelNetAutoencoder,
         print(t_data[0])
         print('Model predicted')
         print(predictions[0])
+        print('Some other random prediction')
+        print(predictions[3])
         error_train = ((predictions - t_data) ** 2).sum() / predictions.numel()   # compute train error
         loss_train = _loss(predictions, t_data, t_reg, t_mask, sparsity_factor)
         predictions = predictions.clip(min_rating, max_rating) # We want to emulate the original masked mse as closely as possible
@@ -73,15 +75,21 @@ def _training_iter(model: KernelNetAutoencoder,
         print('.-^-._' * 12, file=log_file)
         print('epoch:', epoch, file=log_file) 
         print('validation rmse:', np.sqrt(error_validation), 'train rmse:', np.sqrt(error_train), file=log_file)
-        print('validation loss: ', loss_validation, ', train_loss: ', loss_train, file=log_file)
         print('validation observed rmse: ', np.sqrt(error_validation_observed), ', train observed rmse: ', np.sqrt(error_train_observed), file=log_file)
+        print('-' * 50, file=log_file)
+        print('validation mse: ', error_validation, ', train mse: ', error_train, file=log_file)
+        print('validation loss: ', loss_validation, ', train_loss: ', loss_train, file=log_file)
+        print(f'Reg term: {t_reg}', file=log_file)
         print('.-^-._' * 12, file=log_file)
 
         print('.-^-._' * 12) 
         print('epoch:', epoch) 
         print('validation rmse:', np.sqrt(error_validation), 'train rmse:', np.sqrt(error_train))
-        print('validation loss: ', loss_validation, ', train_loss: ', loss_train)
         print('validation observed rmse: ', np.sqrt(error_validation_observed), ', train observed rmse: ', np.sqrt(error_train_observed))
+        print('-' * 50, file=log_file)
+        print('validation mse: ', error_validation, ', train mse: ', error_train) 
+        print('validation loss: ', loss_validation, ', train_loss: ', loss_train)
+        print(f'Reg term: {t_reg}')
         print('.-^-._' * 12)
 
 def train_model(
@@ -97,7 +105,7 @@ def train_model(
         lambda_2: float = 60,
         activation = torch.sigmoid_,
         kernel = gaussian_kernel,
-        hidden_dims = 500,
+        hidden_dims = 50,
         output_every: int = 5,
         # WARNING WARNING WARNING 
         # IF YOU HAVE BAD PC (LOW MEMORY) THEN TUNE THIS THING DOWN, OTHERWISE IT WILL PROBABLY EXPLODE
@@ -119,12 +127,6 @@ def train_model(
            model.parameters(),
            lr=learning_rate
            )
-    optimizer = ScipyMinimizer(
-            model.parameters(),
-            method='L-BFGS-B',
-            options={'maxiter': output_every, 'disp': True, 'maxcor': history_size}
-            )
-    """
     optimizer = torch.optim.LBFGS(
              model.parameters(), 
              max_iter=output_every, 
@@ -132,6 +134,20 @@ def train_model(
              lr=learning_rate,
              line_search_fn='strong_wolfe'
              )
+    optimizer = ScipyMinimizer(
+            model.parameters(),
+            method='L-BFGS-B',
+            options={'maxiter': output_every, 'disp': True, 'maxcor': history_size}
+            )
+    optimizer = torch.optim.Rprop(
+           model.parameters(),
+           lr=learning_rate
+           )
+    """
+    optimizer = torch.optim.Adam(
+            model.parameters(),
+            lr=learning_rate
+            )
     n_epochs = int(epochs/output_every)
     makedirs(output_path, exist_ok=True)
     log_path= path.join(output_path, f'{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.log')

@@ -1,10 +1,10 @@
 # This module provides some helper utilities used for training the model
 from datetime import datetime
 from os import path, makedirs
-from numpy.strings import upper
 import torch
 import numpy as np
 import time
+from ignite.metrics import MaximumMeanDiscrepancy
 from torchmin import ScipyMinimizer
 
 from .kernel import gaussian_kernel
@@ -19,6 +19,15 @@ def _loss(predictions: torch.Tensor,
     loss = torch.sum(masked_diff**2) / 2
     loss = loss + reg_term 
     return loss
+
+def _evaluate_mmd(model: MultiLayerKernelNet, X, yhat):
+    original_latent = model.mmd_forward(X)
+    reconstructed_latent = model.mmd_forward(yhat)
+    metric = MaximumMeanDiscrepancy(var=0.1)
+    metric.reset()
+    metric.update((original_latent, reconstructed_latent))
+    mmd = metric.compute()
+    return mmd
 
 
 def _training_iter(model: MultiLayerKernelNet, 
@@ -50,6 +59,8 @@ def _training_iter(model: MultiLayerKernelNet,
         error_train = (t_mask * (clipped - t_data) ** 2).sum() / t_mask.sum()  # compute train error
         loss_train = _loss(predictions, t_data, t_reg, t_mask)
         loss_validation = _loss(predictions, v_data, t_reg, v_mask)
+        mmd_train = _evaluate_mmd(model, t_data, predictions)
+        mmd_validation = _evaluate_mmd(model, v_data, predictions)
 
         print('.-^-._' * 12, file=log_file)
         print('epoch:', epoch, file=log_file) 
@@ -60,6 +71,7 @@ def _training_iter(model: MultiLayerKernelNet,
         print('epoch:', epoch)
         print('validation rmse:', np.sqrt(error_validation), 'train rmse:', np.sqrt(error_train))
         print('validation loss: ', loss_validation, ', train_loss: ', loss_train)
+        print('validation mmd: ', mmd_validation, ', train mmd: ', mmd_train)
 
 
 def train_model(
@@ -99,8 +111,6 @@ def train_model(
              lr=learning_rate,
              line_search_fn='strong_wolfe'
              )
-    
-
     optimizer = torch.optim.Rprop(
            model.parameters(),
            lr=learning_rate
