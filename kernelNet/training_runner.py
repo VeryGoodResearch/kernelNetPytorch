@@ -5,6 +5,7 @@ import torch
 import numpy as np
 import time
 from ignite.metrics import MaximumMeanDiscrepancy
+from torch.nn import KLDivLoss
 from torchmin import ScipyMinimizer
 
 from .kernel import gaussian_kernel
@@ -17,6 +18,17 @@ def _loss(predictions: torch.Tensor,
           mask: torch.Tensor):
     masked_diff = mask * (truth - predictions)
     loss = torch.sum(masked_diff**2) / 2
+    loss = loss + reg_term 
+    return loss
+
+def _kl_loss(predictions: torch.Tensor,
+             truth: torch.Tensor,
+             reg_term: torch.Tensor,
+             mask: torch.Tensor):
+    masked_truth = mask * truth
+    masked_preds = mask * predictions
+    kl_loss = KLDivLoss(reduction='batchmean')
+    loss = kl_loss(masked_preds, masked_truth)
     loss = loss + reg_term 
     return loss
 
@@ -38,6 +50,7 @@ def _training_iter(model: MultiLayerKernelNet,
                   v_mask: torch.Tensor,
                   optimizer: torch.optim.Optimizer,
                   log_file,
+                  _loss,
                   min_rating: float,
                   max_rating: float):
     # Not the greatest idea to run it otherwise
@@ -72,6 +85,7 @@ def _training_iter(model: MultiLayerKernelNet,
         print('validation rmse:', np.sqrt(error_validation), 'train rmse:', np.sqrt(error_train))
         print('validation loss: ', loss_validation, ', train_loss: ', loss_train)
         print('validation mmd: ', mmd_validation, ', train mmd: ', mmd_train)
+        print(f'reg term: {t_reg}')
 
 
 def train_model(
@@ -92,7 +106,8 @@ def train_model(
         # WARNING WARNING WARNING 
         # IF YOU HAVE BAD PC (LOW MEMORY) THEN TUNE THIS THING DOWN, OTHERWISE IT WILL PROBABLY EXPLODE
         history_size: int = 10,
-        learning_rate: float = 1
+        learning_rate: float = 1,
+        use_kl = False,
         ):
     n_input = training_data.shape[1]
     model = MultiLayerKernelNet(
@@ -111,21 +126,23 @@ def train_model(
              lr=learning_rate,
              line_search_fn='strong_wolfe'
              )
-    optimizer = torch.optim.Rprop(
-           model.parameters(),
-           lr=learning_rate
-           )
-    """
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     optimizer = ScipyMinimizer(
             model.parameters(),
             method='L-BFGS-B',
             options={'maxiter': output_every, 'disp': True, 'maxcor': history_size}
             )
+    """
+    optimizer = torch.optim.Rprop(
+           model.parameters(),
+           lr=learning_rate
+           )
 
 
     n_epochs = int(epochs/output_every)
     makedirs(output_path, exist_ok=True)
     log_path= path.join(output_path, f'{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.log')
+    loss = _kl_loss if use_kl else _loss 
     with open(log_path, 'w+') as log_file:
         for epoch in range(n_epochs):
             start = time.time()
@@ -138,6 +155,7 @@ def train_model(
                     validation_mask,
                     optimizer,
                     log_file,
+                    loss,
                     min_rating,
                     max_rating
                     )

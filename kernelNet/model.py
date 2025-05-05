@@ -17,6 +17,7 @@ class MultiLayerKernelNet(nn.Module):
                  kernel_layers = 2, # Number of sequential kernelNet layers
                  lambda_o: float = 0.013,
                  lambda_2: float = 60,
+                 kl_reg: float | None = None,
                  kernel_function = gaussian_kernel,
                  activation = torch.sigmoid
                  ) -> None:
@@ -34,7 +35,7 @@ class MultiLayerKernelNet(nn.Module):
                     lambda_o=lambda_o,
                     lambda_2=lambda_2,
                     kernel=kernel_function,
-                    activation=activation
+                    activation=activation,
                 ),
                 KernelLayer(
                     kernel_hidden,
@@ -42,7 +43,7 @@ class MultiLayerKernelNet(nn.Module):
                     lambda_o=lambda_o,
                     lambda_2=lambda_2,
                     kernel=kernel_function,
-                    activation=activation
+                    activation=activation,
                 ),
                 KernelLayer(kernel_hidden,
                     n_hid=n_input,
