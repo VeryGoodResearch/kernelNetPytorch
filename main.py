@@ -3,7 +3,7 @@ import torch
 import time
 from kernelNet.training_runner import train_model
 from kernelNet.kernel import gaussian_kernel
-from dataLoader.dataLoader import load_movie_lens, load_jester_data_xls
+from dataLoader.dataLoader import load_movie_lens
 
 
 def main():

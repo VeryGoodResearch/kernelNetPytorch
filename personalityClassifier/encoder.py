@@ -26,6 +26,7 @@ class Encoder(nn.Module):
         self.lambda_2 = lambda_2
         self.kernel_function = kernel_function.__name__
         self.activation = activation
+        self.hidden_dims = hidden_dims
         self.device = get_device()
 
         self.kernel1 = KernelLayer(n_in=n_input,

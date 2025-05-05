@@ -18,6 +18,13 @@ class Decoder(nn.Module):
                  activation = torch.sigmoid
                  ) -> None:
         super().__init__()
+        self.n_output = n_output
+        self.kernel_hidden = kernel_hidden
+        self.lambda_o = lambda_o
+        self.lambda_2 = lambda_2
+        self.hidden_dims = hidden_dims
+        self.kernel_function = kernel_function.__name__
+        self.activation = activation
         self.device = get_device()
         self.layers = nn.Sequential(
                 KernelLayer(n_in=kernel_hidden,

@@ -2,9 +2,9 @@
 import torch
 import time
 from kernelNet.training_runner_for_combined_model import train_model
-from kernelNet.training_runner import train_model as original_train
+from personalityClassifier.training_runner import train_model as encoder_train
 
-from kernelNet.kernel import gaussian_kernel
+from personalityClassifier.kernel import gaussian_kernel
 
 from dataLoader.dataLoader import load_ratings_with_personality_traits
 
@@ -59,14 +59,14 @@ def train_without_personality_traits():
                                                   seed=seed)
     train_data = torch.from_numpy(train_data)
     validation_data = torch.from_numpy(validation_data)
-    train_mask = torch.greater_equal(train_data, 1).float()
-    validation_mask = torch.greater_equal(validation_data, 1).float()
+    train_mask = torch.greater_equal(train_data, 0.5).float()
+    validation_mask = torch.greater_equal(validation_data, 0.5).float()
     print(f'Training shape: {train_data.shape}, validation shape: {validation_data.shape}')
     print(f'Training mask: {train_mask.shape}, validation mask shape: {validation_mask.shape}')
 
     output_every = 50
     epochs = output_every * 30
-    model = original_train(
+    model = encoder_train(
         epochs,
         train_data,
         validation_data,
@@ -74,8 +74,8 @@ def train_without_personality_traits():
         validation_mask,
         kernel=gaussian_kernel,
         activation=torch.nn.Sigmoid(),
-        lambda_o=0.013,
-        lambda_2=60,
+        lambda_o=0.007,
+        lambda_2=70,
         history_size=10,
         output_every=50,
         hidden_dims=50,
@@ -85,5 +85,5 @@ def train_without_personality_traits():
     print(model)
 
 if __name__ == '__main__':
-    main()
-    #train_without_personality_traits()
+    #main()
+    train_without_personality_traits()
