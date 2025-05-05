@@ -16,11 +16,11 @@ def _loss(predictions: torch.Tensor,
           truth: torch.Tensor, 
           reg_term: torch.Tensor,
           mask: torch.Tensor,
-          sparsity_factor: float):
-    masked_diff = mask * (truth - predictions)
+          kl_reg: torch.Tensor,
+          kl_reg_lambda: float):
+    masked_diff = mask * (truth - predictions) / truth.shape[0]
     masked_loss = torch.sum(masked_diff**2) / 2
-    loss = torch.sum(((truth-predictions)/sparsity_factor)**2) / 2
-    loss = masked_loss + reg_term 
+    loss = masked_loss + reg_term + (kl_reg_lambda*kl_reg)
     return loss
 
 
@@ -31,16 +31,16 @@ def _training_iter(model: KernelNetAutoencoder,
                   t_mask: torch.Tensor,
                   v_mask: torch.Tensor,
                   optimizer: torch.optim.Optimizer,
-                  sparsity_factor: float,  
-                  log_file,
+                   kl_reg_lambda: float,  
+                   log_file,
                    min_rating: float,
                    max_rating: float):
     # Not the greatest idea to run it otherwise
     assert torch.is_grad_enabled()
     def optimizer_run():
         optimizer.zero_grad()
-        t_pred, t_reg = model.forward(t_data)
-        loss = _loss(t_pred, t_data, t_reg, t_mask, sparsity_factor)
+        t_pred, t_reg, kl_reg = model.forward(t_data)
+        loss = _loss(t_pred, t_data, t_reg, t_mask, kl_reg, kl_reg_lambda)
         loss.backward()
         """
         ## Debug
@@ -54,7 +54,7 @@ def _training_iter(model: KernelNetAutoencoder,
 
     # Validation
     with torch.no_grad():
-        predictions, t_reg = model.forward(t_data)
+        predictions, t_reg, t_kl_reg = model.forward(t_data)
         print('Training data:')
         print(t_data[0])
         print('Model predicted')
@@ -62,13 +62,13 @@ def _training_iter(model: KernelNetAutoencoder,
         print('Some other random prediction')
         print(predictions[3])
         error_train = ((predictions - t_data) ** 2).sum() / predictions.numel()   # compute train error
-        loss_train = _loss(predictions, t_data, t_reg, t_mask, sparsity_factor)
+        loss_train = _loss(predictions, t_data, t_reg, t_mask, t_kl_reg, kl_reg_lambda)
         predictions = predictions.clip(min_rating, max_rating) # We want to emulate the original masked mse as closely as possible
         error_train_observed = (t_mask * (predictions - t_data)**2).sum() / t_mask.sum()
         # Validation stuff
-        predictions, t_reg = model.forward(v_data)
+        predictions, t_reg, v_kl_reg = model.forward(v_data)
         error_validation = ((predictions - v_data) ** 2).sum() / predictions.numel()  # compute validation error
-        loss_validation = _loss(predictions, v_data, t_reg, v_mask, sparsity_factor)
+        loss_validation = _loss(predictions, v_data, t_reg, v_mask, v_kl_reg, kl_reg_lambda)
         predictions = predictions.clip(min_rating, max_rating) # We want to emulate the original masked mse as closely as possible
         error_validation_observed = (v_mask * (predictions - v_data)**2).sum() / v_mask.sum()
 
@@ -84,12 +84,13 @@ def _training_iter(model: KernelNetAutoencoder,
 
         print('.-^-._' * 12) 
         print('epoch:', epoch) 
+        print(f'loss: {loss_train}')
         print('validation rmse:', np.sqrt(error_validation), 'train rmse:', np.sqrt(error_train))
         print('validation observed rmse: ', np.sqrt(error_validation_observed), ', train observed rmse: ', np.sqrt(error_train_observed))
         print('-' * 50, file=log_file)
         print('validation mse: ', error_validation, ', train mse: ', error_train) 
         print('validation loss: ', loss_validation, ', train_loss: ', loss_train)
-        print(f'Reg term: {t_reg}')
+        print(f'Reg term: {t_reg}, train kl reg: {t_kl_reg*kl_reg_lambda}, validation kl reg: {v_kl_reg*kl_reg_lambda}')
         print('.-^-._' * 12)
 
 def train_model(
@@ -101,8 +102,8 @@ def train_model(
         output_path: str,
         min_rating: float,
         max_rating: float,
-        lambda_o: float = 0.013,
-        lambda_2: float = 60,
+        lambda_o: float = 0.0013,
+        lambda_2: float = 6,
         activation = torch.sigmoid_,
         kernel = gaussian_kernel,
         hidden_dims = 50,
@@ -111,7 +112,8 @@ def train_model(
         # IF YOU HAVE BAD PC (LOW MEMORY) THEN TUNE THIS THING DOWN, OTHERWISE IT WILL PROBABLY EXPLODE
         history_size: int = 10,
         learning_rate: float = 1,
-        sparsity_factor: float = 0.035):
+        kl_activation: float = 0.02,
+        kl_lambda: float = 1e-6):
     device = get_device()
     n_input = training_data.shape[1]
     model = KernelNetAutoencoder(
@@ -121,6 +123,7 @@ def train_model(
             kernel_hidden=hidden_dims,
             kernel_function=kernel,
             activation=activation,
+            kl_activation=kl_activation
             ).to(device)
     """
     optimizer = torch.optim.Rprop(
@@ -134,20 +137,20 @@ def train_model(
              lr=learning_rate,
              line_search_fn='strong_wolfe'
              )
+    optimizer = torch.optim.Adam(
+            model.parameters(),
+            lr=learning_rate
+            )
     optimizer = ScipyMinimizer(
             model.parameters(),
             method='L-BFGS-B',
             options={'maxiter': output_every, 'disp': True, 'maxcor': history_size}
             )
+    """
     optimizer = torch.optim.Rprop(
            model.parameters(),
            lr=learning_rate
            )
-    """
-    optimizer = torch.optim.Adam(
-            model.parameters(),
-            lr=learning_rate
-            )
     n_epochs = int(epochs/output_every)
     makedirs(output_path, exist_ok=True)
     log_path= path.join(output_path, f'{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.log')
@@ -162,12 +165,12 @@ def train_model(
                     training_mask,
                     validation_mask,
                     optimizer,
-                    sparsity_factor,
+                    kl_lambda,
                     log_file,
                     min_rating,
                     max_rating
                     )
             elapsed = time.time() - start
-            save_encoder(model.layers[0], output_path)
+            save_encoder(model.enc, output_path)
             print(f'Run took {elapsed} seconds')
     return model

@@ -12,7 +12,8 @@ class KernelLayer(nn.Module):
                  activation = torch.sigmoid, # Activation function for layer output
                  kernel = gaussian_kernel, # Kernel function
                  lambda_o: float = 0.013, # Sparsity regularization parameter 
-                 lambda_2: float = 60) -> None: # L2 regularization parameter
+                 lambda_2: float = 60, # L2 regularization parameterk
+                 ) -> None:
         # Housekeeping
 
         super(KernelLayer, self).__init__()
@@ -45,9 +46,10 @@ class KernelLayer(nn.Module):
         # Compute regularization terms
         sparse_reg_term = self.lambda_o * torch.sum(w_hat**2)
         l2_reg_term = self.lambda_2 * torch.sum(self.W**2)
-        reg_term = sparse_reg_term + l2_reg_term
         # Compute actual output
         w_eff = self.W * w_hat # [n_in, n_hid]
         y = torch.matmul(x, w_eff) + self.b
         y = self.activation(y)
+        reg_term = sparse_reg_term + l2_reg_term 
         return y, reg_term
+
