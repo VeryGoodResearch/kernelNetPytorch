@@ -2,6 +2,7 @@
 import torch
 import time
 from kernelNet.training_runner_for_combined_model import train_model
+from kernelNet.training_runner import train_model as original_train
 from personalityClassifier.training_runner import train_model as encoder_train
 
 from personalityClassifier.kernel import gaussian_kernel
@@ -55,7 +56,7 @@ def train_without_personality_traits():
     seed = int(time.time())
     torch.seed()
     # In case transpose=False each sample represents a user
-    train_data, validation_data, _, _ = load_ratings_with_personality_traits(path='../personality-isf2018/', transpose=False, valfrac=0.1,
+    train_data, validation_data, _, _ = load_ratings_with_personality_traits(path='data/personality-isf2018/', transpose=False, valfrac=0.1,
                                                   seed=seed)
     train_data = torch.from_numpy(train_data)
     validation_data = torch.from_numpy(validation_data)
@@ -66,7 +67,7 @@ def train_without_personality_traits():
 
     output_every = 50
     epochs = output_every * 30
-    model = encoder_train(
+    model = original_train(
         epochs,
         train_data,
         validation_data,
@@ -74,14 +75,16 @@ def train_without_personality_traits():
         validation_mask,
         kernel=gaussian_kernel,
         activation=torch.nn.Sigmoid(),
-        lambda_o=0.007,
-        lambda_2=70,
+        lambda_o=0.013,
+        lambda_2=60,
         history_size=10,
         output_every=50,
-        hidden_dims=50,
+        hidden_dims=500,
         output_path='./output_personality/',
         min_rating=0.5,
-        max_rating=5.0)
+        max_rating=5.0,
+        learning_rate=0.005,
+        use_kl=False)
     print(model)
 
 if __name__ == '__main__':

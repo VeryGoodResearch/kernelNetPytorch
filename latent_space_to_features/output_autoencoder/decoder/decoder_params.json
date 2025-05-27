@@ -1,0 +1,1 @@
+{"n_output": 35196, "kernel_hidden": 500, "lambda_o": 7e-09, "lambda_2": 8e-07, "hidden_dims": 5, "kernel_function": "gaussian_kernel", "activation": "Sigmoid"}

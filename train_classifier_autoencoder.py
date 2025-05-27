@@ -37,10 +37,10 @@ def main():
             lambda_2=8e-7,
             history_size=5,
             output_every=50,
-            hidden_dims=100,
+            hidden_dims=500,
             output_path='./output_autoencoder/',
             learning_rate=0.0005,
-            kl_activation=0.15,
+            kl_activation=0.1,
             kl_lambda=2e-4,
             min_rating=0.5,
             max_rating=5.0)
@@ -49,4 +49,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    #train_without_personality_traits()
