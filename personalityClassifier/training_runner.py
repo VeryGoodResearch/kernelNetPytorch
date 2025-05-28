@@ -171,7 +171,7 @@ def train_model(
                     max_rating
                     )
             elapsed = time.time() - start
-            save_encoder(model.enc, output_path)
-            save_decoder(model.dec, output_path)
             print(f'Run took {elapsed} seconds')
+    save_encoder(model.enc, output_path)
+    save_decoder(model.dec, output_path)
     return model
