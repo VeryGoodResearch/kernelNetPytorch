@@ -18,15 +18,13 @@ class Expander(nn.Module):
         super().__init__()
         self.start = nn.Sequential(
             nn.BatchNorm1d(input_dim),
-            nn.Linear(input_dim, 512),
+            nn.Linear(input_dim, 32),
             nn.ReLU()
         )
-        self.res1 = Block(512)
-        self.res2 = Block(512)
-        self.out = nn.Linear(512, target_dim)
+        self.res1 = Block(128)
+        self.out = nn.Linear(128, target_dim)
 
     def forward(self, x):
         x = self.start(x)
         x = self.res1(x)
-        x = self.res2(x)
         return self.out(x)
