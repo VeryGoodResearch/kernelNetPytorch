@@ -7,10 +7,16 @@ import numpy as np
 import time
 from .save_encoder_decoder import save_encoder, save_decoder
 from torchmin import ScipyMinimizer
+from sklearn.metrics import ndcg_score
 
 from personalityClassifier.autoencoder import KernelNetAutoencoder
 from personalityClassifier.kernel import gaussian_kernel
 from personalityClassifier.utils import get_device
+
+def _evaluate_reccomendation_list(X: np.ndarray, X_hat: np.ndarray, n=20):
+    top_true = np.flip(np.argsort(X, axis=1)[:,-n:], axis=1)
+    top_predicted = np.flip(np.argsort(X_hat, axis=1)[:,-n:], axis=1)
+    return top_true, top_predicted
 
 def _loss(predictions: torch.Tensor, 
           truth: torch.Tensor, 
@@ -34,7 +40,8 @@ def _training_iter(model: KernelNetAutoencoder,
                    kl_reg_lambda: float,  
                    log_file,
                    min_rating: float,
-                   max_rating: float):
+                   max_rating: float,
+                   verbose = 2):
     # Not the greatest idea to run it otherwise
     assert torch.is_grad_enabled()
     def optimizer_run():
@@ -55,22 +62,23 @@ def _training_iter(model: KernelNetAutoencoder,
     # Validation
     with torch.no_grad():
         predictions, t_reg, t_kl_reg = model.forward(t_data)
-        print('Training data:')
-        print(t_data[0])
-        print('Model predicted')
-        print(predictions[0])
-        print('Some other random prediction')
-        print(predictions[3])
+        if verbose > 1:
+            print('Training data:')
+            print(t_data[0])
+            print('Model predicted')
+            print(predictions[0])
+            print('Some other random prediction')
+            print(predictions[3])
         error_train = ((predictions - t_data) ** 2).sum() / predictions.numel()   # compute train error
         loss_train = _loss(predictions, t_data, t_reg, t_mask, t_kl_reg, kl_reg_lambda)
         predictions = predictions.clip(min_rating, max_rating) # We want to emulate the original masked mse as closely as possible
         error_train_observed = (t_mask * (predictions - t_data)**2).sum() / t_mask.sum()
         # Validation stuff
-        predictions, t_reg, v_kl_reg = model.forward(v_data)
-        error_validation = ((predictions - v_data) ** 2).sum() / predictions.numel()  # compute validation error
-        loss_validation = _loss(predictions, v_data, t_reg, v_mask, v_kl_reg, kl_reg_lambda)
-        predictions = predictions.clip(min_rating, max_rating) # We want to emulate the original masked mse as closely as possible
-        error_validation_observed = (v_mask * (predictions - v_data)**2).sum() / v_mask.sum()
+        v_predictions, t_reg, v_kl_reg = model.forward(v_data)
+        error_validation = ((v_predictions - v_data) ** 2).sum() / v_predictions.numel()  # compute validation error
+        loss_validation = _loss(v_predictions, v_data, t_reg, v_mask, v_kl_reg, kl_reg_lambda)
+        v_predictions = v_predictions.clip(min_rating, max_rating) # We want to emulate the original masked mse as closely as possible
+        error_validation_observed = (v_mask * (v_predictions - v_data)**2).sum() / v_mask.sum()
 
         print('.-^-._' * 12, file=log_file)
         print('epoch:', epoch, file=log_file) 
@@ -85,12 +93,19 @@ def _training_iter(model: KernelNetAutoencoder,
         print('.-^-._' * 12) 
         print('epoch:', epoch) 
         print(f'loss: {loss_train}')
-        print('validation rmse:', np.sqrt(error_validation), 'train rmse:', np.sqrt(error_train))
-        print('validation observed rmse: ', np.sqrt(error_validation_observed), ', train observed rmse: ', np.sqrt(error_train_observed))
-        print('-' * 50, file=log_file)
-        print('validation mse: ', error_validation, ', train mse: ', error_train) 
-        print('validation loss: ', loss_validation, ', train_loss: ', loss_train)
-        print(f'Reg term: {t_reg}, train kl reg: {t_kl_reg*kl_reg_lambda}, validation kl reg: {v_kl_reg*kl_reg_lambda}')
+        if verbose > 0:
+            print('validation rmse:', np.sqrt(error_validation), 'train rmse:', np.sqrt(error_train))
+            print('validation observed rmse: ', np.sqrt(error_validation_observed), ', train observed rmse: ', np.sqrt(error_train_observed))
+            print('-' * 50, file=log_file)
+            print('validation mse: ', error_validation, ', train mse: ', error_train) 
+            print('validation loss: ', loss_validation, ', train_loss: ', loss_train)
+            print(f'Reg term: {t_reg}, train kl reg: {t_kl_reg*kl_reg_lambda}, validation kl reg: {v_kl_reg*kl_reg_lambda}')
+            train_lists = _evaluate_reccomendation_list(t_data.detach().numpy(), (predictions*t_mask).detach().numpy())
+            validation_lists = _evaluate_reccomendation_list(v_data.detach().numpy(), (v_predictions*v_mask).detach().numpy())
+            print(f'TOP 20 - Validation ndcg: {ndcg_score(*validation_lists)}, train ndcg: {ndcg_score(*train_lists)}')
+            train_lists = _evaluate_reccomendation_list(t_data.detach().numpy(), (predictions*t_mask).detach().numpy(), n=5)
+            validation_lists = _evaluate_reccomendation_list(v_data.detach().numpy(), (v_predictions*v_mask).detach().numpy(), n=5)
+            print(f'TOP 5 - Validation ndcg: {ndcg_score(*validation_lists)}, train ndcg: {ndcg_score(*train_lists)}')
         print('.-^-._' * 12)
 
 def train_model(
@@ -113,7 +128,8 @@ def train_model(
         history_size: int = 10,
         learning_rate: float = 1,
         kl_activation: float = 0.02,
-        kl_lambda: float = 1e-6):
+        kl_lambda: float = 1e-6,
+        verbose = 2):
     device = get_device()
     n_input = training_data.shape[1]
     model = KernelNetAutoencoder(
@@ -168,7 +184,8 @@ def train_model(
                     kl_lambda,
                     log_file,
                     min_rating,
-                    max_rating
+                    max_rating,
+                    verbose
                     )
             elapsed = time.time() - start
             print(f'Run took {elapsed} seconds')

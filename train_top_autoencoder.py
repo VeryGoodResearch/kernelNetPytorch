@@ -41,7 +41,8 @@ def main():
             kl_activation=0.1,
             kl_lambda=2e-4,
             min_rating=0.5,
-            max_rating=5.0)
+            max_rating=5.0,
+            verbose=1)
 
     print(model)
 
