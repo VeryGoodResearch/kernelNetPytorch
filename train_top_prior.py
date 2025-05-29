@@ -1,0 +1,28 @@
+import torch
+import time
+import numpy as np
+
+from dataLoader.dataLoader import load_top_movies_with_personality_traits
+from personalityClassifier.kernel import gaussian_kernel
+from personalityClassifier.load_encoder_decoder import load_encoder
+from personalityClassifier.training_runner import train_model
+from personalityClassifier.utils import get_device
+from priors.top_prior import train_top_prior
+
+def main():
+    seed = int(time.time())
+    torch.seed()
+    train_data, test_data, X_train, X_test, _ = load_top_movies_with_personality_traits(
+        path='data/personality-isf2018/', valfrac=0.1, seed=seed, transpose=False, feature_classification=True)
+    device = get_device()
+    train_data = torch.from_numpy(train_data).to(device).squeeze()
+    test_data = torch.from_numpy(test_data).to(device).squeeze()
+    encoder = load_encoder('output_top_autoencoder')
+    y_train = encoder.forward(train_data)[0]
+    y_test = encoder.forward(test_data)[0]
+    X_train = torch.from_numpy(X_train).to(device)/7.0
+    X_test = torch.from_numpy(X_test).to(device)/7.0
+    train_top_prior(X_train.squeeze(), X_test.squeeze(), y_train, y_test, epochs=1000, learning_rate = 0.01)
+
+if __name__ == '__main__':
+    main()
