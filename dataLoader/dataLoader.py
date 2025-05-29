@@ -274,15 +274,30 @@ def load_top_movies_with_personality_traits(path='./', valfrac=0.1, seed=1234, f
        - `val_ratings` (numpy.ndarray): Validation set containing movie ratings.
        - `train_user_features` (numpy.ndarray): Training set containing personality traits.
        - `val_user_features` (numpy.ndarray): Validation set containing personality traits.
+       - "top_indices" (numpy.ndarray): list of indices which correspond to movie indices in the original dataset 
        """
     X_train, X_test, p_train, p_test = load_ratings_with_personality_traits(path, valfrac, seed, feature_classification, transpose)
     movie_ratings = np.count_nonzero(X_train, axis=0) + np.count_nonzero(X_test, axis=0)
     movie_ratings = movie_ratings.ravel()
-    top_indices = np.argsort(movie_ratings)[-n:].squeeze()
+    top_indices = np.argsort(movie_ratings, stable=True)[::-1][:n]
     X_train=X_train.squeeze()
     X_test = X_test.squeeze()
     X_train = X_train[:,top_indices]
     X_test = X_test[:,top_indices]
     X_train = X_train[np.where(np.count_nonzero(X_train, axis=1)>0)]
+    p_train = p_train[np.where(np.count_nonzero(X_train, axis=1)>0)]
     X_test = X_test[np.where(np.count_nonzero(X_test, axis=1)>0)]
-    return X_train, X_test, p_train, p_test
+    p_test = p_test[np.where(np.count_nonzero(X_test, axis=1)>0)]
+    return X_train, X_test, p_train, p_test, top_indices
+
+def load_mid_movies_with_personality_traits(path='./', valfrac=0.1, seed=1234, feature_classification = False, transpose=False, n=500, cutoff=10000):
+    X_train, X_test, p_train, p_test = load_ratings_with_personality_traits(path, valfrac, seed, feature_classification, transpose)
+    movie_ratings = np.count_nonzero(X_train, axis=0) + np.count_nonzero(X_test, axis=0)
+    movie_ratings = movie_ratings.ravel()
+    indices = np.argsort(movie_ratings, stable=True)[::-1][n:cutoff]
+    X_train=X_train.squeeze()
+    X_test = X_test.squeeze()
+    X_train = X_train[:,indices]
+    X_test = X_test[:,indices]
+    return X_train, X_test, p_train, p_test, indices
+
