@@ -6,39 +6,54 @@ import tqdm
 from priors.utils import VectorToOffsetMatrix, kl_bernoulli
 
 class TopPrior(nn.Module):
-    def __init__(self, input_size, output_size) -> None:
+    def __init__(self, input_size, output_size, sparse_activation) -> None:
         super().__init__()
+        self.kl_activation = sparse_activation
         self.layers = nn.Sequential(
-                nn.Linear(input_size, 16),
+                nn.Linear(input_size, 32),
                 nn.Sigmoid(),
-                nn.Linear(16, 64),
+                nn.Linear(32, 128),
                 nn.Sigmoid(),
                 nn.Dropout(0.2),
-                nn.Linear(64, output_size),
+                nn.Linear(128, output_size),
                 nn.Sigmoid()
                 )
 
+    def __compute_KL_reg(self, activations: torch.Tensor) -> torch.Tensor:
+        eps = 1e-6
+        a = activations.clamp(min=eps, max=1 - eps)
+        g = torch.full_like(a, self.kl_activation).clamp(min=eps, max=1 - eps)
+        reg = a * torch.log(a / g) + (1 - a) * torch.log((1 - a) / (1 - g))
+        if torch.isnan(reg).any():
+            print("KL reg has NaNs:", a.min(), a.max())
+        term = reg.sum() / a.shape[0]
+        return term
+
     def forward(self, X):
-        return self.layers.forward(X)
+        res = self.layers.forward(X)
+        reg = self.__compute_KL_reg(res)
+        return res, reg
         
 
-def train_top_prior(X_train, X_test, y_train, y_test, epochs, learning_rate, output='./output_top_prior'):
-    model = TopPrior(X_train.shape[1], y_train.shape[1])
+def train_top_prior(X_train, X_test, y_train, y_test, epochs, learning_rate, output='./output_top_prior', sparse_lambda = 1e-6):
+    print(y_train[0])
+    model = TopPrior(X_train.shape[1], y_train.shape[1], 0.1)
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
     pbar = tqdm.tqdm(range(epochs), desc="Training", dynamic_ncols=True)
     for epoch in pbar:
         optimizer.zero_grad()
-        yhat = model.forward(X_train)
-        kl_bernoulli(yhat, y_train)
+        yhat, reg = model.forward(X_train)
+        loss = kl_bernoulli(yhat, y_train) + (sparse_lambda*reg)
+        loss.backward(retain_graph=True)
         optimizer.step()
         with torch.no_grad():
-            yhat_train = model(X_train)
-            yhat_test = model(X_test)
+            yhat_train, regt = model(X_train)
+            yhat_test, regv = model(X_test)
             rmse_train = torch.sqrt(F.mse_loss(yhat_train, y_train)).item()
             rmse_test = torch.sqrt(F.mse_loss(yhat_test, y_test)).item()
-            loss_train = kl_bernoulli(y_train, yhat_train).mean()
-            loss_val = kl_bernoulli(y_test, yhat_test).mean()
+            loss_train = kl_bernoulli(y_train, yhat_train) + regt*sparse_lambda
+            loss_val = kl_bernoulli(y_test, yhat_test) + regv*sparse_lambda
             ma_train = yhat_train.mean().item()
             ma_test = yhat_test.mean().item()
 
@@ -50,4 +65,7 @@ def train_top_prior(X_train, X_test, y_train, y_test, epochs, learning_rate, out
             "Train ma": f"{ma_train:.4f}",
             "Val ma": f"{ma_test:.4f}",
         })
+    print(f'First latent space: {y_test[0]}')
+    print(f'Prediction: {model.forward(X_test[0])[0]}')
+    return model
 
