@@ -11,12 +11,7 @@ from sklearn.metrics import ndcg_score
 
 from personalityClassifier.autoencoder import KernelNetAutoencoder
 from personalityClassifier.kernel import gaussian_kernel
-from personalityClassifier.utils import compute_ndcg, get_device
-
-def _evaluate_reccomendation_list(X: np.ndarray, X_hat: np.ndarray, n=20):
-    top_true = [np.where(user_ratings > 2.0)[0] for user_ratings in X]
-    top_predicted = np.argsort(X_hat, axis=1, stable=True)[:,::-1][:, :n]
-    return top_true, top_predicted
+from personalityClassifier.utils import compute_ndcg, get_device, evaluate_reccomendation_list
 
 def _loss(predictions: torch.Tensor, 
           truth: torch.Tensor, 
@@ -101,8 +96,8 @@ def _training_iter(model: KernelNetAutoencoder,
             print('validation loss: ', loss_validation, ', train_loss: ', loss_train)
             print(f'Reg term: {t_reg}, train kl reg: {t_kl_reg*kl_reg_lambda}, validation kl reg: {v_kl_reg*kl_reg_lambda}')
             if verbose > 1:
-                train_lists = _evaluate_reccomendation_list(t_data.detach().numpy(), (predictions*t_mask).detach().numpy())
-                validation_lists = _evaluate_reccomendation_list(v_data.detach().numpy(), (v_predictions*v_mask).detach().numpy())
+                train_lists = evaluate_reccomendation_list(t_data.detach().numpy(), (predictions*t_mask).detach().numpy())
+                validation_lists = evaluate_reccomendation_list(v_data.detach().numpy(), (v_predictions*v_mask).detach().numpy())
                 print(f'NDCG@5: validation: {compute_ndcg(*validation_lists, k=5, num_items=v_data.shape[1])}, train: {compute_ndcg(*train_lists, k=5, num_items=t_data.shape[1])}')
                 print(f'NDCG@20: validation: {compute_ndcg(*validation_lists, k=20, num_items=v_data.shape[1])}, train: {compute_ndcg(*train_lists, k=20, num_items=t_data.shape[1])}')
                 print(f'Sample recommendations: {validation_lists[1][0]}, true ratings: {validation_lists[0][0]}')

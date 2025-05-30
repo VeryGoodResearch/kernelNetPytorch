@@ -65,7 +65,5 @@ def train_top_prior(X_train, X_test, y_train, y_test, epochs, learning_rate, out
             "Train ma": f"{ma_train:.4f}",
             "Val ma": f"{ma_test:.4f}",
         })
-    print(f'First latent space: {y_test[0]}')
-    print(f'Prediction: {model.forward(X_test[0])[0]}')
     return model
 

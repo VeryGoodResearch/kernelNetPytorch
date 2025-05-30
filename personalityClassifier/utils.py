@@ -19,8 +19,15 @@ def _compute_ndcg_from_indices(true_items, predicted_items, k=5, num_items=None)
 
     return ndcg_score([y_true], [y_score], k=k)
 
+def evaluate_reccomendation_list(X: np.ndarray, X_hat: np.ndarray, n=20, threshold=2.0):
+    top_true = [np.where(user_ratings > threshold)[0] for user_ratings in X]
+    top_predicted = np.argsort(X_hat, axis=1, stable=True)[:,::-1][:, :n]
+    return top_true, top_predicted
+
 def compute_ndcg(X_true, X_pred, k, num_items):
     scores = np.zeros((len(X_true)))
     for idx, user in enumerate(X_true):
         scores[idx] = _compute_ndcg_from_indices(user, X_pred[idx], k=k, num_items=num_items)
     return scores.mean()
+
+
