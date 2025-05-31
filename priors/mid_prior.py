@@ -1,3 +1,4 @@
+import os
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -24,12 +25,13 @@ class MidPrior(nn.Module):
                 )
 
     def __compute_KL_reg(self, activations: torch.Tensor) -> torch.Tensor:
-        eps = 1e-6
+        eps = 1e-4
         a = activations.clamp(min=eps, max=1 - eps)
         g = torch.full_like(a, self.kl_activation).clamp(min=eps, max=1 - eps)
         reg = a * torch.log(a / g) + (1 - a) * torch.log((1 - a) / (1 - g))
         if torch.isnan(reg).any():
             print("KL reg has NaNs:", a.min(), a.max())
+            print(activations)
         term = reg.sum() / a.shape[0]
         return term
 
@@ -39,8 +41,7 @@ class MidPrior(nn.Module):
         return res, reg
         
 
-def train_mid_prior(X_train, X_test, y_train, y_test, epochs, learning_rate, output='./output_top_prior', sparse_lambda = 1e-6):
-    print(y_train[0])
+def train_mid_prior(X_train, X_test, y_train, y_test, epochs, learning_rate, output='./output_mid_prior', sparse_lambda = 1e-6):
     model = MidPrior(X_train.shape[1], y_train.shape[1], 0.1)
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
@@ -69,5 +70,7 @@ def train_mid_prior(X_train, X_test, y_train, y_test, epochs, learning_rate, out
             "Train ma": f"{ma_train:.4f}",
             "Val ma": f"{ma_test:.4f}",
         })
+    os.makedirs(output, exist_ok=True)
+    torch.save(model.state_dict(), os.path.join(output, 'model.torch'))
     return model
 

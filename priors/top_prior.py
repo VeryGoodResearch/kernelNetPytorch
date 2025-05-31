@@ -2,6 +2,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 import tqdm
+import os
 
 from priors.utils import VectorToOffsetMatrix, kl_bernoulli
 
@@ -69,5 +70,7 @@ def train_top_prior(X_train, X_test, y_train, y_test, epochs, learning_rate, out
             "Train ma": f"{ma_train:.4f}",
             "Val ma": f"{ma_test:.4f}",
         })
+    os.makedirs(output, exist_ok=True)
+    torch.save(model.state_dict(), os.path.join(output, 'model.torch'))
     return model
 

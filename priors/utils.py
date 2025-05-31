@@ -9,7 +9,7 @@ class VectorToOffsetMatrix(nn.Module):
         return result.unsqueeze(1)
 
 
-def kl_bernoulli(p, q, eps=1e-10):
+def kl_bernoulli(p, q, eps=1e-6):
     p = torch.clamp(p, eps, 1 - eps)
     q = torch.clamp(q, eps, 1 - eps)
     res = p * torch.log(p / q) + (1 - p) * torch.log((1 - p) / (1 - q))
