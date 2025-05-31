@@ -5,21 +5,21 @@ import tqdm
 
 from priors.utils import VectorToOffsetMatrix, kl_bernoulli
 
-class TopPrior(nn.Module):
+class MidPrior(nn.Module):
     def __init__(self, input_size, output_size, sparse_activation) -> None:
         super().__init__()
         self.kl_activation = sparse_activation
         self.layers = nn.Sequential(
                 VectorToOffsetMatrix(),
-                nn.Conv2d(1, 5, kernel_size=3, stride=2),
+                nn.Conv2d(1, 10, kernel_size=3, stride=2),
                 nn.ReLU(),
                 nn.Flatten(),
-                nn.Linear(5*2*2, 32),
+                nn.Linear(10*2*2, 128),
                 nn.Sigmoid(),
-                nn.Linear(32, 128),
+                nn.Linear(128, 512),
                 nn.Sigmoid(),
                 nn.Dropout(0.2),
-                nn.Linear(128, output_size),
+                nn.Linear(512, output_size),
                 nn.Sigmoid()
                 )
 
@@ -39,9 +39,9 @@ class TopPrior(nn.Module):
         return res, reg
         
 
-def train_top_prior(X_train, X_test, y_train, y_test, epochs, learning_rate, output='./output_top_prior', sparse_lambda = 1e-6):
+def train_mid_prior(X_train, X_test, y_train, y_test, epochs, learning_rate, output='./output_top_prior', sparse_lambda = 1e-6):
     print(y_train[0])
-    model = TopPrior(X_train.shape[1], y_train.shape[1], 0.1)
+    model = MidPrior(X_train.shape[1], y_train.shape[1], 0.1)
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
     pbar = tqdm.tqdm(range(epochs), desc="Training", dynamic_ncols=True)

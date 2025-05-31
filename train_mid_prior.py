@@ -2,7 +2,7 @@ import torch
 import time
 import numpy as np
 
-from dataLoader.dataLoader import load_top_movies_with_personality_traits
+from dataLoader.dataLoader import load_mid_movies_with_personality_traits
 from personalityClassifier.kernel import gaussian_kernel
 from personalityClassifier.load_encoder_decoder import load_decoder, load_encoder
 from personalityClassifier.training_runner import train_model
@@ -12,7 +12,7 @@ from priors.top_prior import train_top_prior
 def main():
     seed = int(time.time())
     torch.seed()
-    train_data, test_data, X_train, X_test, _ = load_top_movies_with_personality_traits(
+    train_data, test_data, X_train, X_test, _ = load_mid_movies_with_personality_traits(
         path='data/personality-isf2018/', valfrac=0.1, seed=seed, transpose=False, feature_classification=True)
     device = get_device()
     train_data = torch.from_numpy(train_data).to(device).squeeze()
