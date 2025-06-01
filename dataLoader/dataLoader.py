@@ -257,3 +257,69 @@ def load_ratings_with_personality_traits(path='./', valfrac=0.1, seed=1234, feat
     return train_ratings, val_ratings, train_user_features, val_user_features
 
 
+def load_ratings_matrix_from_personality_traits_dataset(path='./', seed=1234):
+    """
+       The `load_ratings_with_personality_traits` function prepares data for a machine learning model
+       by combining users' movie ratings with their personality traits. The dataset can be downloaded from:
+       https://grouplens.org/datasets/personality-2018/
+
+       ### Parameters:
+       - `path` (str): Path to the dataset directory.
+       - `seed` (int): Random seed for reproducibility (default: 1234).
+
+
+       ### Returns:
+       - matrix with ratings (n_u, n_m)
+
+       """
+    np.random.seed(seed)
+
+    df_personality = pd.read_csv(path + "/personality-data.csv")
+    df_personality.columns = df_personality.columns.str.strip()
+    df_personality = df_personality[["userid", "openness", "agreeableness",
+                                     "emotional_stability", "conscientiousness", "extraversion"]]
+    df_personality.rename(columns={"userid": "user_id"}, inplace=True)
+
+
+    df_ratings = pd.read_csv(path + "ratings.csv")
+    df_ratings.rename(columns={"useri": "user_id"}, inplace=True)
+    df_ratings["user_id"] = df_ratings["user_id"].astype(str)
+    df_ratings.columns = df_ratings.columns.str.strip()
+
+    common_users = set(df_ratings["user_id"]).intersection(set(df_personality["user_id"]))
+    mun_users = len(common_users)
+    num_movies = np.unique(df_ratings["movie_id"]).shape[0]
+    num_features = df_personality.shape[1] - 1
+
+    print("number of users: " + str(mun_users))
+    print("number of movies: " + str(num_movies))
+    print("number of user features: " + str(num_features))
+
+    df = df_ratings.drop_duplicates(subset=["user_id", "movie_id"], keep="first")
+    df_pivot = df.pivot(index="user_id", columns="movie_id", values="rating")
+    df_pivot.reset_index(inplace=True)
+
+    i = 0
+    data = []
+    for user in common_users:
+
+        if user not in df_pivot["user_id"].values or user not in df_personality["user_id"].values:
+            continue
+        else:
+            user_ratings = df_pivot[df_pivot["user_id"] == user].iloc[:, 1:].to_numpy()
+            user_ratings = np.nan_to_num(user_ratings, nan=0).astype(float)
+
+            user_feature_row = df_personality[df_personality["user_id"] == user].iloc[0, 1:].to_numpy()
+            user_feature_row = np.nan_to_num(user_feature_row, nan=0).astype(float)
+
+            row = {
+                "user_id": user,
+                "ratings": user_ratings.tolist(),
+                "features": user_feature_row.tolist()
+            }
+            data.append(row)
+
+        i += 1
+
+    ratings = np.array([user["ratings"] for user in data], dtype=np.float32).squeeze()
+    return ratings
