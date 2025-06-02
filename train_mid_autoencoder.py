@@ -11,7 +11,7 @@ def main():
     seed = int(time.time())
     torch.seed()
     train_data, validation_data, _, _, _ = load_mid_movies_with_personality_traits(
-        path='data/personality-isf2018/', valfrac=0.1, seed=seed, transpose=False, feature_classification=True, n=250)
+        path='data/personality-isf2018/', valfrac=0.1, transpose=False, feature_classification=True, n=250)
     device = get_device()
     train_data = torch.from_numpy(train_data).to(device).squeeze()
     validation_data = torch.from_numpy(validation_data).to(device).squeeze()

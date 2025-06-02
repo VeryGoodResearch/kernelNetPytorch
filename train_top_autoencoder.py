@@ -8,10 +8,8 @@ from personalityClassifier.training_runner import train_model
 from personalityClassifier.utils import get_device
 
 def main():
-    seed = int(time.time())
-    torch.seed()
     train_data, validation_data, _, _, _ = load_top_movies_with_personality_traits(
-        path='data/personality-isf2018/', valfrac=0.1, seed=seed, transpose=False, feature_classification=True)
+        path='data/personality-isf2018/', valfrac=0.1, transpose=False, feature_classification=True)
     device = get_device()
     train_data = torch.from_numpy(train_data).to(device).squeeze()
     validation_data = torch.from_numpy(validation_data).to(device).squeeze()

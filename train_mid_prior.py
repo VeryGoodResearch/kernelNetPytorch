@@ -11,9 +11,8 @@ from priors.mid_prior import train_mid_prior
 
 def main():
     seed = int(time.time())
-    torch.seed()
     train_data, test_data, X_train, X_test, _ = load_mid_movies_with_personality_traits(
-        path='data/personality-isf2018/', valfrac=0.1, seed=seed, transpose=False, feature_classification=True, n=250)
+        path='data/personality-isf2018/', valfrac=0.1, transpose=False, feature_classification=True, n=250)
     device = get_device()
     train_data = torch.from_numpy(train_data).to(device).squeeze()
     test_data = torch.from_numpy(test_data).to(device).squeeze()
