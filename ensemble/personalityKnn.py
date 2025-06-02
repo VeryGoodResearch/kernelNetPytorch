@@ -7,3 +7,8 @@ def recommend_personality(personality: np.ndarray, ratings: np.ndarray, personal
     pred_ratings = ratings[top].mean(axis=1)
     return pred_ratings
 
+def recommend_personality_exclusive(personality: np.ndarray, ratings: np.ndarray, personalities: np.ndarray, n = 5):
+    sims = cosine_similarity(personality, personalities)
+    top = np.argsort(-sims, axis=1)[:, 1:n+1]
+    pred_ratings = ratings[top].mean(axis=1)
+    return pred_ratings

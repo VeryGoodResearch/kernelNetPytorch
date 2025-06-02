@@ -2,7 +2,9 @@ import torch
 from torch import nn
 import numpy as np
 
-from ensemble.personalityKnn import recommend_personality
+from ensemble.personalityKnn import recommend_personality, recommend_personality_exclusive
+from ensemble.utils import get_relevant_items
+from personalityClassifier.utils import compute_itemwise_ndcg
 
 class EnsembleModel(nn.Module):
     def __init__(self, 
@@ -14,7 +16,8 @@ class EnsembleModel(nn.Module):
                  user_personalities, # user personalities for user personality knn
                  top_indices, # movie index map for top 500 movies recommendation
                  mid_indices, # movie index map for top 20k movies recommendation
-                 k = 20 # number of reccomended items
+                 k = 20, # number of reccomended items
+                 probability_mapper = None,
                  ) -> None:
         super().__init__()
         self.small_dec = small_dec
@@ -26,6 +29,7 @@ class EnsembleModel(nn.Module):
         self.top_map = top_indices
         self.mid_map = mid_indices
         self.k = k
+        self.mapper = probability_mapper
 
     def __map_subset_preds(self, output, map):
         out = torch.empty((output.shape[0], self.user_ratings.shape[2]))
@@ -40,15 +44,19 @@ class EnsembleModel(nn.Module):
         top_indices = torch.argsort(ratings, descending=True, dim=1)[:,:self.k]
         return top_indices
 
-    def forward(self, X: torch.Tensor, mask: torch.Tensor | None = None):
+    def generate_training_data(self, X: torch.Tensor, true_ratings: torch.Tensor, mask: torch.Tensor):
+        top_picks, true_rates = get_relevant_items(true_ratings.squeeze())
         top_preds = self.small_dec(self.small_prior(X)[0])[0]
-        top_preds = self.__map_subset_preds(top_preds, self.top_map)
-        top_preds = top_preds * mask if mask is not None else top_preds
+        top_preds = self.__map_subset_preds(top_preds, self.top_map) * mask
         top_preds = self.__get_rec_list(top_preds).unsqueeze(1)
+        top_preds = compute_itemwise_ndcg(top_picks, top_preds, true_rates, k=20, num_items=true_ratings.shape[2]).reshape(1, -1)
+        print('top done')
         mid_preds = self.mid_dec(self.mid_prior(X)[0])[0]
-        mid_preds = self.__map_subset_preds(mid_preds, self.mid_map)
-        mid_preds = mid_preds*mask if mask is not None else mid_preds
+        mid_preds = self.__map_subset_preds(mid_preds, self.mid_map) * mask
         mid_preds = self.__get_rec_list(mid_preds).unsqueeze(1)
-        k_preds = recommend_personality(X.cpu().numpy(), self.user_ratings.squeeze(), self.user_personalities.squeeze())
+        mid_preds = compute_itemwise_ndcg(top_picks, mid_preds, true_rates, k=20, num_items=true_ratings.shape[2]).reshape(1, -1)
+        print('mid done')
+        k_preds = recommend_personality_exclusive(X.cpu().numpy(), self.user_ratings.squeeze(), self.user_personalities.squeeze())
         k_preds = self.__get_rec_list(torch.from_numpy(k_preds)).unsqueeze(1)
-        return torch.concat((top_preds, mid_preds, k_preds), dim=1)
+        k_preds = compute_itemwise_ndcg(top_picks, k_preds, true_rates, k=20, num_items=true_ratings.shape[2]).reshape(1, -1)
+        return np.concat((top_preds, mid_preds, k_preds), axis=1)

@@ -10,12 +10,26 @@ from priors.mid_prior import MidPrior
 from priors.top_prior import TopPrior
 
 def main():
+    model, X_train, _, p_train, _, train_mask, _ = load_ensemble_model()
+    split_index = 638
+    train_data_first = model.generate_training_data(p_train[:split_index], X_train[:split_index], train_mask[:split_index])
+    print(train_data_first.shape)
+    train_data_second = model.generate_training_data(p_train[split_index:], X_train[split_index:], train_mask[split_index:])
+    print(train_data_second.shape)
+    del model
+    train_data = np.concatenate((train_data_first, train_data_second))
+    del train_data_first
+    del train_data_second
+    print(train_data.shape)
+    print(train_data[0])
+
+def load_ensemble_model():
     # Data loading
     X_train, X_test, p_train, p_test = load_ratings_with_personality_traits(path='data/personality-isf2018/', valfrac=0.1, transpose=False, feature_classification=True)
     _, _, _, _, top_indices = load_top_movies_with_personality_traits(path='data/personality-isf2018/', valfrac=0.1, transpose=False, feature_classification=True)
     _, _, _, _, mid_indices = load_mid_movies_with_personality_traits(path='data/personality-isf2018/', valfrac=0.1, transpose=False, feature_classification=True, n=250)
     train_mask = torch.greater_equal(torch.from_numpy(X_train), 0.1).float().squeeze()
-    # test_mask = torch.greater_equal(torch.from_numpy(X_test), 0.1).float().squeeze()
+    test_mask = torch.greater_equal(torch.from_numpy(X_test), 0.1).float().squeeze()
     # Model loading
     top_dec = load_decoder('output_top_autoencoder')
     top_prior = TopPrior(5, 100, 0.1)
@@ -29,29 +43,8 @@ def main():
     p_train = p_train.squeeze()
     p_test = p_test.squeeze()
     model = EnsembleModel(top_dec, top_prior, mid_dec, mid_prior, X_train, p_train, top_indices, mid_indices)
-    preds = model(p_train, train_mask)
-    permed = torch.permute(preds, (1, 0, 2))
-    print(preds.shape)
-    print(f'Top recs recommend: {preds[0][0]}')
-    print(f'Mid recs recommend: {preds[1][0]}')
-    print(f'Sim recs recommend: {preds[2][0]}')
-    true, rates = get_relevant_items(X_train.squeeze())
-    print(permed.shape)
-    n = X_train.shape[2]
-    top_andy = compute_ndcg(true, permed[0], rates, 5, n)
-    mid_andy = compute_ndcg(true, permed[1], rates, 5, n)
-    sim_andy = compute_ndcg(true, permed[2], rates, 5, n)
-    print('NDCG@5')
-    print(f'Top: {top_andy}')
-    print(f'Mid: {mid_andy}')
-    print(f'Simmilarity: {sim_andy}')
-    top_andy = compute_ndcg(true, permed[0], rates, 20, n)
-    mid_andy = compute_ndcg(true, permed[1], rates, 20, n)
-    sim_andy = compute_ndcg(true, permed[2], rates, 20, n)
-    print('NDCG@20')
-    print(f'Top: {top_andy}')
-    print(f'Mid: {mid_andy}')
-    print(f'Simmilarity: {sim_andy}')
+    return model, X_train, X_test, p_train, p_test, train_mask, test_mask
+
 
 if __name__ == '__main__':
     main()

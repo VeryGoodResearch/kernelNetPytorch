@@ -31,4 +31,9 @@ def compute_ndcg(X_true, X_pred, true_ratings, k, num_items):
         scores[idx] = _compute_ndcg_from_indices(user, X_pred[idx], true_ratings[idx], k=k, num_items=num_items)
     return scores.mean()
 
+def compute_itemwise_ndcg(X_true, X_pred, true_ratings, k, num_items):
+    scores = np.zeros((len(X_true)))
+    for idx, user in enumerate(X_true):
+        scores[idx] = _compute_ndcg_from_indices(user, X_pred[idx], true_ratings[idx], k=k, num_items=num_items)
+    return scores
 
