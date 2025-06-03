@@ -4,13 +4,20 @@ import numpy as np
 from dataLoader.dataLoader import load_mid_movies_with_personality_traits, load_ratings_with_personality_traits, load_top_movies_with_personality_traits
 from ensemble.ensemble_model import EnsembleModel
 from ensemble.personality_modeller import PersonalityModeller
+from ensemble.utils import get_relevant_items
 from personalityClassifier.load_encoder_decoder import load_decoder
+from personalityClassifier.utils import compute_ndcg
 from priors.mid_prior import MidPrior
 from priors.top_prior import TopPrior
 
 
 def main():
-    model, X_train, X_test, p_train, p_test, train_mask, test_mask = load_ensemble_model()
+    model, _, X_test, _, p_test, _, test_mask = load_ensemble_model()
+    with torch.no_grad():
+        v_hat = model.forward(p_test)
+        relevant, rates = get_relevant_items(X_test.squeeze())
+        v_andy = compute_ndcg(relevant, v_hat.cpu().long(), rates, num_items=X_test.shape[2], k=20)
+        print(f'Test ndcg@20: {v_andy}')
 
 
 def load_ensemble_model():
@@ -34,7 +41,7 @@ def load_ensemble_model():
     p_test = torch.from_numpy(p_test)/7.0
     p_train = p_train.squeeze()
     p_test = p_test.squeeze()
-    model = EnsembleModel(top_dec, top_prior, mid_dec, mid_prior, X_train, p_train, top_indices, mid_indices, personality_modeller)
+    model = EnsembleModel(top_dec, top_prior, mid_dec, mid_prior, X_train, p_train, top_indices, mid_indices, 20, personality_modeller)
     return model, X_train, X_test, p_train, p_test, train_mask, test_mask
 
 if __name__ == '__main__':

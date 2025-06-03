@@ -15,7 +15,7 @@ def _compute_ndcg_from_indices(true_items, predicted_items, true_ratings, k=5, n
 
     y_score = np.zeros(num_items)
     for rank, item in enumerate(predicted_items[:k]):
-        y_score[item] = k - rank
+        y_score[item] = 1/(rank+1)
 
     return ndcg_score([y_true], [y_score], k=k)
 

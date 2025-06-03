@@ -14,8 +14,8 @@ from priors.top_prior import TopPrior
 def generate_training_data():
     model, X_train, X_test, p_train, p_test, train_mask, test_mask = load_ensemble_model()
     with torch.no_grad():
-        train_data =  softmax(model.generate_training_data(p_train, X_train, train_mask), dim=1).float()
-        test_data = softmax(model.generate_training_data(p_test, X_test, test_mask, exclusive=False), dim=1).float()
+        train_data =  softmax(model.generate_training_data(p_train, X_train), dim=1).float()
+        test_data = softmax(model.generate_training_data(p_test, X_test, exclusive=False), dim=1).float()
         return p_train.float(), p_test.float(), train_data, test_data
 
 def main():
