@@ -4,6 +4,7 @@ from torch.nn.functional import softmax
 
 from dataLoader.dataLoader import load_mid_movies_with_personality_traits, load_ratings_with_personality_traits, load_top_movies_with_personality_traits
 from ensemble.ensemble_model import EnsembleModel
+from ensemble.personality_modeller import train_personality_modeller
 from ensemble.utils import get_relevant_items
 from personalityClassifier.load_encoder_decoder import load_decoder
 from personalityClassifier.utils import compute_ndcg
@@ -13,9 +14,9 @@ from priors.top_prior import TopPrior
 def generate_training_data():
     model, X_train, X_test, p_train, p_test, train_mask, test_mask = load_ensemble_model()
     with torch.no_grad():
-        train_data =  softmax(model.generate_training_data(p_train, X_train, train_mask), dim=1)
-        test_data = softmax(model.generate_training_data(p_test, X_test, test_mask, exclusive=False), dim=1)
-        return p_train, p_test, train_data, test_data
+        train_data =  softmax(model.generate_training_data(p_train, X_train, train_mask), dim=1).float()
+        test_data = softmax(model.generate_training_data(p_test, X_test, test_mask, exclusive=False), dim=1).float()
+        return p_train.float(), p_test.float(), train_data, test_data
 
 def main():
     X_train, X_test, y_train, y_test = generate_training_data() 
@@ -24,6 +25,10 @@ def main():
     print(y_train[0])
     print(torch.mean(y_train, dim=0))
     print(torch.mean(y_test, dim=0))
+    model = train_personality_modeller(X_train, X_test, y_train, y_test)
+    pred = model(X_test[:10])
+    print(f'True probs: {y_test[:10]}')
+    print(f'Predicted: {pred}')
 
 
 def load_ensemble_model():

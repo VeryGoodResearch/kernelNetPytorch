@@ -44,6 +44,9 @@ class EnsembleModel(nn.Module):
         top_indices = torch.argsort(ratings, descending=True, dim=1)[:,:self.k]
         return top_indices
 
+    def __fuse_rec_lists(self, top, mid, sim, probs):
+
+
     def generate_training_data(self, X: torch.Tensor, true_ratings: torch.Tensor, mask: torch.Tensor, exclusive = True):
         assert not torch.is_grad_enabled()
         top_picks, true_rates = get_relevant_items(true_ratings.squeeze())
@@ -59,3 +62,16 @@ class EnsembleModel(nn.Module):
         k_preds = self.__get_rec_list(torch.from_numpy(k_preds)).unsqueeze(1)
         k_preds = compute_itemwise_ndcg(top_picks, k_preds, true_rates, k=20, num_items=true_ratings.shape[2])
         return torch.vstack((torch.from_numpy(top_preds), torch.from_numpy(mid_preds), torch.from_numpy(k_preds))).permute((1, 0))
+
+    def forward(self, X: torch.Tensor, mask: torch.Tensor | None = None):
+        assert not torch.is_grad_enabled()
+        top_preds = self.small_dec(self.small_prior(X)[0])[0]
+        top_preds = self.__map_subset_preds(top_preds, self.top_map)
+        top_preds = top_preds * mask if mask is not None else top_preds
+        top_preds = self.__get_rec_list(top_preds).unsqueeze(1)
+        mid_preds = self.mid_dec(self.mid_prior(X)[0])[0]
+        mid_preds = self.__map_subset_preds(mid_preds, self.mid_map)
+        mid_preds = mid_preds * mask if mask is not None else mid_preds
+        mid_preds = self.__get_rec_list(mid_preds).unsqueeze(1)
+        k_preds = recommend_personality(X.cpu().numpy(), self.user_ratings.squeeze(), self.user_personalities.squeeze())
+        k_preds = self.__get_rec_list(torch.from_numpy(k_preds)).unsqueeze(1)
