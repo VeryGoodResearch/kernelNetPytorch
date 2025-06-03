@@ -11,13 +11,14 @@ class PersonalityModeller(nn.Module):
         super().__init__()
         self.layers = nn.Sequential(
                 VectorToOffsetMatrix(),
-                nn.Conv2d(1, 5, kernel_size=3, stride=2),
+                nn.Conv2d(1, 20, kernel_size=3, stride=2),
                 nn.LeakyReLU(),
                 nn.Flatten(),
-                nn.Linear(5*2*2, 8),
+                nn.Linear(20*2*2, 64),
+                nn.Dropout(0.2),
                 nn.Sigmoid(),
-                nn.Linear(8, output_size),
-                nn.Softmax(dim=1)
+                nn.Linear(64, output_size),
+                nn.Sigmoid()
                 )
 
     def forward(self, X: torch.Tensor):
