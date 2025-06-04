@@ -43,7 +43,7 @@ def load_ensemble_model():
     # Data loading
     X_train, X_test, p_train, p_test = load_ratings_with_personality_traits(path='data/personality-isf2018/', valfrac=0.1, transpose=False, feature_classification=True)
     _, _, _, _, top_indices = load_top_movies_with_personality_traits(path='data/personality-isf2018/', valfrac=0.1, transpose=False, feature_classification=True)
-    _, _, _, _, mid_indices = load_mid_movies_with_personality_traits(path='data/personality-isf2018/', valfrac=0.1, transpose=False, feature_classification=True, n=250)
+    _, _, _, _, mid_indices = load_mid_movies_with_personality_traits(path='data/personality-isf2018/', valfrac=0.1, transpose=False, feature_classification=True, n=0)
     train_mask = torch.greater_equal(torch.from_numpy(X_train), 0.1).float().squeeze()
     test_mask = torch.greater_equal(torch.from_numpy(X_test), 0.1).float().squeeze()
     # Model loading

@@ -159,6 +159,7 @@ def load_ratings_with_personality_traits(path='./', valfrac=0.1, seed=1234, feat
        - `val_user_features` (numpy.ndarray): Validation set containing personality traits.
        """
     np.random.seed(seed)
+    rng = np.random.default_rng(seed)
 
     df_personality = pd.read_csv(path + "/personality-data.csv")
     df_personality.columns = df_personality.columns.str.strip()
@@ -187,7 +188,7 @@ def load_ratings_with_personality_traits(path='./', valfrac=0.1, seed=1234, feat
 
     i = 0
     data = []
-    for user in common_users:
+    for user in sorted(common_users):
 
         if user not in df_pivot["user_id"].values or user not in df_personality["user_id"].values:
             continue
@@ -210,7 +211,7 @@ def load_ratings_with_personality_traits(path='./', valfrac=0.1, seed=1234, feat
     ratings = np.array([user["ratings"] for user in data], dtype=np.float32).squeeze()
     user_features = np.array([user["features"] for user in data], dtype=np.float32)
 
-    np.random.shuffle(data)
+    rng.shuffle(data)
     num_val = int(len(data) * valfrac)
 
     train_user_features = user_features[num_val:]
@@ -290,7 +291,7 @@ def load_top_movies_with_personality_traits(path='./', valfrac=0.1, seed=1234, f
     p_test = p_test[np.where(np.count_nonzero(X_test, axis=1)>0)]
     return X_train, X_test, p_train, p_test, top_indices
 
-def load_mid_movies_with_personality_traits(path='./', valfrac=0.1, seed=1234, feature_classification = False, transpose=False, n=500, cutoff=10000):
+def load_mid_movies_with_personality_traits(path='./', valfrac=0.1, seed=1234, feature_classification = False, transpose=False, n=500, cutoff=2000):
     X_train, X_test, p_train, p_test = load_ratings_with_personality_traits(path, valfrac, seed, feature_classification, transpose)
     movie_ratings = np.count_nonzero(X_train, axis=0) + np.count_nonzero(X_test, axis=0)
     movie_ratings = movie_ratings.ravel()
