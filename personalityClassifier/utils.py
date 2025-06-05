@@ -37,3 +37,20 @@ def compute_itemwise_ndcg(X_true, X_pred, true_ratings, k, num_items):
         scores[idx] = _compute_ndcg_from_indices(user, X_pred[idx], true_ratings[idx], k=k, num_items=num_items)
     return scores
 
+
+def calculate_hitrate(relevant_items, recommended_items, n=20):
+    hits = 0
+    num_users = recommended_items.shape[0]
+    
+    for user_idx in range(num_users):
+        top_n = recommended_items[user_idx, :n].tolist()
+        relevant = relevant_items[user_idx].tolist()
+        
+        # Convert relevant to set for fast lookup
+        relevant_set = set(relevant)
+        
+        if set(top_n) & relevant_set:
+            hits += 1
+            
+    return hits / num_users
+

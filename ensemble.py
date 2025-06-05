@@ -6,7 +6,7 @@ from ensemble.ensemble_model import EnsembleModel
 from ensemble.personality_modeller import PersonalityModeller
 from ensemble.utils import get_relevant_items
 from personalityClassifier.load_encoder_decoder import load_decoder
-from personalityClassifier.utils import compute_ndcg
+from personalityClassifier.utils import compute_ndcg, calculate_hitrate
 from priors.mid_prior import MidPrior
 from priors.top_prior import TopPrior
 
@@ -22,6 +22,12 @@ def main():
         print(f'Test ndcg@10: {v_andy}')
         v_andy = compute_ndcg(relevant, v_hat.cpu().long(), rates, num_items=X_test.shape[2], k=5)
         print(f'Test ndcg@5: {v_andy}')
+        hr = calculate_hitrate(relevant, v_hat.cpu().long(), 20)
+        print(f'Test hr@20: {hr}')
+        hr = calculate_hitrate(relevant, v_hat.cpu().long(), 10)
+        print(f'Test hr@10: {hr}')
+        hr = calculate_hitrate(relevant, v_hat.cpu().long(), 5)
+        print(f'Test hr@5: {hr}')
 
 
 def load_ensemble_model():
