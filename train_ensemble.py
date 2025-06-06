@@ -19,7 +19,7 @@ def generate_training_data():
         row_sums = train_out.sum(dim=1, keepdim=True).float()
         train_data = train_out / row_sums
         train_data[(row_sums==0).squeeze()==1] = torch.zeros(3)
-        test_out = model.generate_training_data(p_test, X_test, exclusive=False).float()
+        test_out = model.generate_training_data(p_test, X_test, exclusive=False, detailed=True).float()
         print(f'Mean ndcgs for test: {torch.mean(test_out, dim=0)}')
         row_sums = test_out.sum(dim=1, keepdim=True).float()
         test_data = test_out / row_sums
