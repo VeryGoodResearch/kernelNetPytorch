@@ -19,8 +19,8 @@ def _loss(predictions: torch.Tensor,
           mask: torch.Tensor,
           kl_reg: torch.Tensor,
           kl_reg_lambda: float):
-    masked_diff = mask * (truth - predictions) / truth.shape[0]
-    masked_loss = torch.sum(masked_diff**2) / 2
+    masked_diff = mask * (truth - predictions)
+    masked_loss = torch.sum(masked_diff**2) / 2 / truth.shape[0]
     loss = masked_loss + reg_term + (kl_reg_lambda*kl_reg)
     return loss
 

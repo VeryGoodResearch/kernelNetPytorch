@@ -19,7 +19,7 @@ def main():
     print(f'Training mask: {train_mask.shape}, validation mask shape: {validation_mask.shape}')
     print(f'Device: {device}')
     output_every=50
-    epochs = 600
+    epochs = 1000
     epochs = output_every * epochs
     model = train_model(
             epochs,
@@ -29,15 +29,15 @@ def main():
             validation_mask,
             kernel=gaussian_kernel,
             activation=torch.nn.Sigmoid(),
-            lambda_o=7e-8,
-            lambda_2=9e-6,
+            lambda_o=1e-5,
+            lambda_2=3e-2,
             history_size=5,
             output_every=50,
             hidden_dims=100,
             output_path='./output_top_autoencoder/',
             learning_rate=0.0007,
             kl_activation=0.1,
-            kl_lambda=2e-4,
+            kl_lambda=5e-1,
             min_rating=0.5,
             max_rating=5.0,
             verbose=1)
