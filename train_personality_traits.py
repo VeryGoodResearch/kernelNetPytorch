@@ -3,7 +3,6 @@ import torch
 import time
 from kernelNet.training_runner_for_combined_model import train_model
 from kernelNet.training_runner import train_model as original_train
-from personalityClassifier.training_runner import train_model as encoder_train
 
 from personalityClassifier.kernel import gaussian_kernel
 
@@ -56,7 +55,7 @@ def train_without_personality_traits():
     seed = int(time.time())
     torch.seed()
     # In case transpose=False each sample represents a user
-    train_data, validation_data, _, _ = load_ratings_with_personality_traits(path='data/personality-isf2018/', transpose=False, valfrac=0.1,
+    train_data, validation_data, _, _ = load_ratings_with_personality_traits(path='../personality-isf2018/', transpose=False, valfrac=0.1,
                                                   seed=seed)
     train_data = torch.from_numpy(train_data)
     validation_data = torch.from_numpy(validation_data)

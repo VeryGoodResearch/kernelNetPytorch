@@ -26,7 +26,7 @@ def show_matrix(matrix, title):
     plt.show()
 
 
-original_ratings = load_ratings_matrix_from_personality_traits_dataset(path='../../personality-isf2018/')
+original_ratings = load_ratings_matrix_from_personality_traits_dataset(path='data/personality-isf2018/')
 device = get_device()
 
 original_ratings = torch.from_numpy(original_ratings).to(device).squeeze()

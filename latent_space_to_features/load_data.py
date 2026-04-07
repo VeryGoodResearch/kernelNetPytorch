@@ -10,7 +10,7 @@ def load_data():
     seed = int(time.time())
     torch.seed()
     train_data, validation_data, train_user_features, valid_user_features = load_ratings_with_personality_traits(
-        path='../../personality-isf2018/', valfrac=0.1, seed=seed, feature_classification=False, transpose=False)
+        path='data/personality-isf2018/', valfrac=0.1, seed=seed, feature_classification=False, transpose=False)
 
     """
     nonzero_rows = validation_data.sum(axis=1) > 0
