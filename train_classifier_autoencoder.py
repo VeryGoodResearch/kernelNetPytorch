@@ -10,8 +10,8 @@ from personalityClassifier.utils import get_device
 
 
 def main():
-    seed = int(time.time())
-    torch.seed()
+    seed = 1234
+    torch.manual_seed(seed)
     train_data, validation_data, train_user_features, valid_user_features = load_ratings_with_personality_traits(
         path='data/personality-isf2018/', valfrac=0.1, seed=seed, transpose=False, feature_classification=True)
     device = get_device()

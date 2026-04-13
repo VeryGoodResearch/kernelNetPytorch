@@ -210,7 +210,10 @@ def load_ratings_with_personality_traits(path='./', valfrac=0.1, seed=1234, feat
     ratings = np.array([user["ratings"] for user in data], dtype=np.float32).squeeze()
     user_features = np.array([user["features"] for user in data], dtype=np.float32)
 
-    np.random.shuffle(data)
+    idx = np.arange(len(data))
+    np.random.shuffle(idx)
+    ratings = ratings[idx]
+    user_features = user_features[idx]
     num_val = int(len(data) * valfrac)
 
     train_user_features = user_features[num_val:]
