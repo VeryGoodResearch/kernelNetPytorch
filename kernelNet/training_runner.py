@@ -68,12 +68,15 @@ def _training_iter(model: MultiLayerKernelNet,
     with torch.no_grad():
         predictions, t_reg = model.forward(t_data)
         clipped = torch.clamp(predictions, min_rating, max_rating)
-        error_validation = (v_mask * (clipped - v_data) ** 2).sum() / v_mask.sum()  # compute validation error
         error_train = (t_mask * (clipped - t_data) ** 2).sum() / t_mask.sum()  # compute train error
         loss_train = _loss(predictions, t_data, t_reg, t_mask)
-        loss_validation = _loss(predictions, v_data, t_reg, v_mask)
         mmd_train = _evaluate_mmd(model, t_data, predictions)
-        mmd_validation = _evaluate_mmd(model, v_data, predictions)
+
+        v_predictions, v_reg = model.forward(v_data)
+        v_clipped = torch.clamp(v_predictions, min_rating, max_rating)
+        error_validation = (v_mask * (v_clipped - v_data) ** 2).sum() / v_mask.sum()  # compute validation error
+        loss_validation = _loss(v_predictions, v_data, v_reg, v_mask)
+        mmd_validation = _evaluate_mmd(model, v_data, v_predictions)
 
         print('.-^-._' * 12, file=log_file)
         print('epoch:', epoch, file=log_file) 

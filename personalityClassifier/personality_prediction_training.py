@@ -25,7 +25,7 @@ encoder = load_encoder("../output_autoencoder/")
 seed = int(time.time())
 
 train_data, validation_data, train_user_features, valid_user_features = load_ratings_with_personality_traits(
-    path='../data/personality-isf2018/', valfrac=0.1, seed=123, transpose=False, feature_classification=True)
+    path='data/personality-isf2018/', valfrac=0.1, seed=123, transpose=False, feature_classification=True)
 device = get_device()
 train_data = torch.from_numpy(train_data).to(device).squeeze()
 validation_data = torch.from_numpy(validation_data).to(device).squeeze()

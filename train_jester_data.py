@@ -9,7 +9,7 @@ from dataLoader.dataLoader import load_movie_lens, load_jester_data_xls
 def main():
     seed = int(time.time())
     torch.seed()
-    train_data, validation_data = load_jester_data_xls(r'..\jester-data-1\jester-data-1.xls', transpose=True, valfrac=0.1, seed=seed)
+    train_data, validation_data = load_jester_data_xls('data/jester_dataset_1_1/jester-data-1.xls', transpose=True, valfrac=0.1, seed=seed)
     train_data = torch.from_numpy(train_data)
     validation_data = torch.from_numpy(validation_data)
     train_mask = torch.greater_equal(train_data, 1).float()
@@ -38,4 +38,4 @@ def main():
     print(model)
 
 if __name__ == '__main__':
-    main()
+    m
